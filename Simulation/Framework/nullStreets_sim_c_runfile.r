@@ -5,6 +5,8 @@ load("../Data/gridWithin_prec.rda")    # gridWithin_prec
 group = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(group)
 
+tau = 10      # CHANGE FOR HOTSPOT STUFF
+
 file_names <- c(paste0("../Data/Surfaces/gridPointValues_hotspot_", group,".rda"),
                 paste0("../Data/Surfaces/gridPointValues_uniform_", group,".rda"),
                 paste0("../Data/Surfaces/gridPointValues_cov_r_", group,".rda"),
@@ -18,7 +20,7 @@ for (file in 1:4) {
     load(file_names[file])
     gridPointValues = NULL
 
-    if (file == 1) {gridPointValues = gridPointValues_hotspot}
+    if (file == 1) {gridPointValues = gridPointValues_hotspot * tau}
     else if (file == 2) {gridPointValues = gridPointValues_uniform}
     else if (file == 3) {gridPointValues = gridPointValues_cov_r}
     else if (file == 4) {gridPointValues = gridPointValues_cov_c_big}

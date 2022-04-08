@@ -18,6 +18,8 @@ folder_type <- c("HotSpot_combine", "Uniform_combine", "Random_combine", "Correl
 trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-100
 set.seed(trialNum)
 
+tau = 10      # CHANGE FOR HOTSPOT STUFF
+
 load("../Data/nycSub.RData")
 load("../Data/ind_prec_df.rda")
 load("../Data/gridWithin_prec.rda")
@@ -37,7 +39,7 @@ for (s_name in 1:4) {
                 "_", trialNum, ".rda"))
 
     gridPointValues = NULL
-    if(s_name == 1) {gridPointValues = gridPointValues_hotspot}
+    if(s_name == 1) {gridPointValues = gridPointValues_hotspot * tau}
     if(s_name == 2) {gridPointValues = gridPointValues_uniform}
     if(s_name == 3) {gridPointValues = gridPointValues_cov_r}
     if(s_name == 4) {gridPointValues = gridPointValues_cov_c_big}

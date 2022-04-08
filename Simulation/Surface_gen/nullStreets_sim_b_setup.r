@@ -16,23 +16,9 @@ gridPointValues_uniform = gridPointValues_hotspot = rep(1, gridPointValues_lengt
 save(gridPointValues_uniform, file = paste0("../Data/Surfaces/gridPointValues_uniform_", k, ".rda"))
 
 # HOT SPOT BIAS ----------------------------------------------------------------
-
-#choosing 200 hotspot centers
-hotSpotCenters = sample(c(1:gridPointValues_length), 200)
-
-#create buffer around hotspots
-hotSpotPolys = vector(mode = "list", length = length(hotSpotCenters))
-for (i in 1:length(hotSpotCenters)) {
-  ind = hotSpotCenters[i]
-  hotSpotPolys[[i]] = gBuffer(gridWithin[ind,], byid = T, width = 4000)
-}
-
-#adjust weight of each coordinate point
-for (i in 1:length(hotSpotCenters)) {
-  hotSpotAffect = point.in.polygon(gridWithin@coords[,1], gridWithin@coords[,2],
-                                   hotSpotPolys[[i]]@polygons[[1]]@Polygons[[1]]@coords[,1],
-                                   hotSpotPolys[[i]]@polygons[[1]]@Polygons[[1]]@coords[,2])
-  gridPointValues_hotspot[which(hotSpotAffect > 0)] = gridPointValues_hotspot[which(hotSpotAffect > 0)] + 1
+prec_coeff = sample(1:77, 77)
+for (i in 1:77) {
+  gridPointValues_hotspot[gridWithin_prec[[i]]$index] = prec_coeff[i]
 }
 
 save(gridPointValues_hotspot, file = paste0("../Data/Surfaces/gridPointValues_hotspot_", k, ".rda"))
@@ -66,7 +52,7 @@ gridWithin_cov_c = as(gridWithin_cov_c, "SpatialPoints")
 coordDF <- data.frame(Longitude = gridWithin_cov_c@coords[,1], Latitude = gridWithin_cov_c@coords[,2])
 corrStructure <- dist(coordDF)
 corrStructure <- as.matrix(corrStructure)
-rho = 2500
+rho = 4000
 corrStructure <- -1 * corrStructure / rho
 corrStructure <- exp(corrStructure)
 
@@ -83,7 +69,7 @@ gridPointValues_cov_c_big = rep(1, gridPointValues_length)
 
 for (ii in 1:gridPointValues_length) {
   print(ii)
-  temp_buff = gBuffer(gridWithin[ii,], byid = T, width = 2200 + 500*(k-1))
+  temp_buff = gBuffer(gridWithin[ii,], byid = T, width = 2700)
   corr_points = point.in.polygon(gridWithin_cov_c@coords[,1], gridWithin_cov_c@coords[,2],
                                  temp_buff@polygons[[1]]@Polygons[[1]]@coords[,1],
                                  temp_buff@polygons[[1]]@Polygons[[1]]@coords[,2])
