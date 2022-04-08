@@ -1,12 +1,11 @@
 library(tidyverse)
 library(RColorBrewer)
-library(ggmap)
 library(gridExtra)
 
-load("../Data/Surfaces/gridPointValues_cov_c_10.rda")
-load("../Data/Surfaces/gridPointValues_cov_r_10.rda")
-load("../Data/Surfaces/gridPointValues_hotspot_10.rda")
-load("../Data/Surfaces/gridPointValues_uniform_10.rda")
+load("../Data/Surfaces/gridPointValues_cov_c_40.rda")
+load("../Data/Surfaces/gridPointValues_cov_r_40.rda")
+load("../Data/Surfaces/gridPointValues_hotspot_40.rda")
+load("../Data/Surfaces/gridPointValues_uniform_40.rda")
 
 load("../Data/nycSub.RData")
 load("../Data/gridWithin.rda")
@@ -90,7 +89,7 @@ nyc.map <- ggplot(plot_df, aes(x, y)) +
                       legend.title = element_blank())
 plot_mat[[4]] = nyc.map
 
-png(filename = "Plots/heatMaps_3.png", width = 2000, height = 1000,
+png(filename = "Plots/heatMaps_4.png", width = 2000, height = 1000,
     units = "px", pointsize = 12, bg = "white", res = NA)
 # pdf('Plots/heatMaps_3.pdf')
 grid.arrange(plot_mat[[1]], plot_mat[[2]], plot_mat[[3]], plot_mat[[4]], ncol=4, nrow =1)
