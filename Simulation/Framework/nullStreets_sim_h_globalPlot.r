@@ -28,14 +28,11 @@ for (trialNum in 1:100) {
         
         for(k in 2:13) {
             
-            t_stat = sum(sim_master[[k]]$tStats_area, na.rm = T)
-	    # print(paste0("Tstat: ", t_stat))
+            t_stat = max(sim_master[[k]]$tStats_area, na.rm = T)
             w_max = which.max(na.omit(sim_master[[k]]$tStats_area))
 
             whichMaxInfo[[s_name]][[k]] = rbind(whichMaxInfo[[s_name]][[k]], 
                                           c(w_max, t_stat))
-            
-            # print(paste0("Index: ", w_max, " tstat: ", t_stat))
             
             test = density(global_t_stat[[k]]$max_t_stat, bw = "ucv")
             xx = test$x

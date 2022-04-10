@@ -1,5 +1,7 @@
 library(sp); library(sf); library(rgeos); library(raster)
 
+save_name = c("HotSpot_combine/", "Random_combine/", "Uniform_combine/", "Correlated_combine/")
+
 load("../Data/gridWithin_prec.rda")    # gridWithin_prec
 
 group = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
@@ -26,8 +28,13 @@ for (file in 1:4) {
     else if (file == 4) {gridPointValues = gridPointValues_cov_c_big}
     else {print("Incorrect input to start")}
 
+
+    comboInfo <- vector(mode = "list", length = 13)
+
     # Iterate through each buffer width
     for (index in 2:13) {
+
+      combinedMatchingSetup = NULL
 
       for (k in 1:77) {
 
@@ -126,13 +133,35 @@ for (file in 1:4) {
             }
           }
 
-          save(nullStr_point_data, file=paste0("../Output_noWater/", save_names[file],
-                "nullData", group, "_at_" ,index, "_", k,".dat", sep=''))
+          nullStr_point_data = nullStr_point_data[nullStr_point_data$precinct != -1, ]
+          combinedMatchingSetup = rbind(combinedMatchingSetup, nullStr_point_data)
+
       }
-      #remember to remove the -1
 
+      # Cleaning things slightly 
+
+      combinedMatchingSetup = combinedMatchingSetup[combinedMatchingSetup$streets1 != 0, ]
+      combinedMatchingSetup = combinedMatchingSetup[combinedMatchingSetup$streets2 != 0, ]
+      combinedMatchingSetup = combinedMatchingSetup[!is.na(combinedMatchingSetup$tStat), ]
+      combinedMatchingSetup = combinedMatchingSetup[!is.na(combinedMatchingSetup$tStat_a), ]
+
+      combinedMatchingSetupFix = combinedMatchingSetup
+
+      ## Create ratios of area and streets
+      combinedMatchingSetupFix$ratioArea = combinedMatchingSetupFix$area1 /
+        combinedMatchingSetupFix$area2
+      combinedMatchingSetupFix$ratioArea[which(combinedMatchingSetupFix$ratioArea < 1)] =
+        1/combinedMatchingSetupFix$ratioArea[which(combinedMatchingSetupFix$ratioArea < 1)]
+
+      combinedMatchingSetupFix$ratioStreet = combinedMatchingSetupFix$streets1 /
+        combinedMatchingSetupFix$streets2
+      combinedMatchingSetupFix$ratioStreet[which(combinedMatchingSetupFix$ratioStreet < 1)] =
+        1/combinedMatchingSetupFix$ratioStreet[which(combinedMatchingSetupFix$ratioStreet < 1)]
+
+      comboInfo[[index]] = combinedMatchingSetupFix
     }
-
+    
+    save(comboInfo, file = paste0("../Trial1/", save_name[file], "combinedMatchingSetup", group, ".dat"))
 
 }
 
