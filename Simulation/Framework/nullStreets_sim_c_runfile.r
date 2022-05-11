@@ -1,20 +1,18 @@
 library(sp); library(sf); library(rgeos); library(raster)
 
-save_name = c("HotSpot_combine/", "Random_combine/", "Uniform_combine/", "Correlated_combine/")
-
 load("../Data/gridWithin_prec.rda")    # gridWithin_prec
 
 group = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(group)
-
-tau = 10      # CHANGE FOR HOTSPOT STUFF
 
 file_names <- c(paste0("../Data/Surfaces/gridPointValues_hotspot_", group,".rda"),
                 paste0("../Data/Surfaces/gridPointValues_uniform_", group,".rda"),
                 paste0("../Data/Surfaces/gridPointValues_cov_r_", group,".rda"),
                 paste0("../Data/Surfaces/gridPointValues_cov_c_", group,".rda"))
 
-save_names <- c("HotSpot/", "Uniform/", "Random/", "Correlated/")
+save_name = c("HotSpot_combine/", "Random_combine/", "Uniform_combine/", "Correlated_combine/")
+
+tau = 0.5      # CHANGE FOR HOTSPOT STUFF
 
 for (file in 1:4) {
 
@@ -38,10 +36,11 @@ for (file in 1:4) {
 
       for (k in 1:77) {
 
-          print(paste0(save_names[file], " Buffer: ", index, ", Precinct: ", k))
+          print(paste0(save_name[file], " Buffer: ", index, ", Precinct: ", k))
 
           l = 1000 # arbitrary start length
 
+          nullStr_point_data = NULL
           nullStr_point_data <- data.frame("precinct" = rep(-1,l), "indigo" = rep(-1,l), "juliet" = rep(-1,l),
                                            "count1" = rep(-1,l), "count2" = rep(-1,l),
                                            "streets1" = rep(-1,l), "streets2" = rep(-1,l),
@@ -96,7 +95,7 @@ for (file in 1:4) {
                     }
                   } 
 
-                  tStat = tStat_a = 0
+                  tStat = tStat_a = NA
 
                   # Want division to be large / small (streets)
                   if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
@@ -114,7 +113,7 @@ for (file in 1:4) {
 
                   n = count1 + count2
                   p = 0.5
-                  pval = 0
+                  pval = NA
 
                   if (count1 <= n/2) {
                     pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
@@ -143,7 +142,7 @@ for (file in 1:4) {
       combinedMatchingSetup = combinedMatchingSetup[combinedMatchingSetup$streets1 != 0, ]
       combinedMatchingSetup = combinedMatchingSetup[combinedMatchingSetup$streets2 != 0, ]
       combinedMatchingSetup = combinedMatchingSetup[!is.na(combinedMatchingSetup$tStat), ]
-      combinedMatchingSetup = combinedMatchingSetup[!is.na(combinedMatchingSetup$tStat_a), ]
+      # combinedMatchingSetup = combinedMatchingSetup[!is.na(combinedMatchingSetup$tStat_area), ]
 
       combinedMatchingSetupFix = combinedMatchingSetup
 

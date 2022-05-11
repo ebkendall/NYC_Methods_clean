@@ -15,10 +15,10 @@ surface_type = c("hotspot", "uniform", "cov_r", "cov_c")
 save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/")
 folder_type <- c("HotSpot_combine", "Uniform_combine", "Random_combine", "Correlated_combine")
 
-trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-100
+trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(trialNum)
 
-tau = 10      # CHANGE FOR HOTSPOT STUFF
+tau = 0.5      # CHANGE FOR HOTSPOT STUFF
 
 load("../Data/nycSub.RData")
 load("../Data/ind_prec_df.rda")
@@ -48,7 +48,7 @@ for (s_name in 1:4) {
                            "tStats" = rep(NA,164), "tStats_area" = rep(NA,164),
                            "pVals_naive" = rep(NA,164), "area1" = rep(NA,164),
                            "area2" = rep(NA,164), "street1" = rep(NA, 164),
-			   "street2" = rep(NA, 164))
+			                     "street2" = rep(NA, 164))
     
 
     print(paste0("Finding points in original borders for k = ", k))
@@ -163,7 +163,7 @@ for (s_name in 1:4) {
         }
       }
 
-      tStat = tStat_a = pval = 0
+      tStat = tStat_a = pval = NA
 
       # Want division to be large / small (streets)
       if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
@@ -181,7 +181,6 @@ for (s_name in 1:4) {
 
       n = count1 + count2
       p = 0.5
-      pval = 0
 
       if (count1 <= n/2) {
         pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)

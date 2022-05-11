@@ -8,6 +8,8 @@ n_matches = 150
 trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-100
 set.seed(trialNum)
 
+`%notin%` <- Negate(`%in%`)
+
 # Step Outline -----------------------------------------------------------------
 # Step 1: save all the matches in the global_null list for each surface
 # Step 2: iterate through and grab the max
@@ -70,24 +72,25 @@ for (s_name in 1:4) {
             dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$area1 + combinedMatchingSetupFix2$area2))^2/v1) +
                                 ((ratio_temp - combinedMatchingSetupFix2$ratioArea)^2 / v2))
 
-            w50 = order(dist_temp)[1:n_matches]
+            # w50 = order(dist_temp)[1:n_matches]
 
-            # # Choose one mother street --------------------
-            # match_count = jj = 1
-            # streetInd = vector(mode = "list", length = 77) 
-            # for (w in 1:77) {streetInd[[w]] = c(-1) }
-            # w50 = rep(NA, n_matches)
-            # close_ind = order(dist_temp)
-            # while(match_count <= n_matches) {
-            #     temp = combinedMatchingSetupFix2[close_ind[jj], ]
-            #     if(temp$indigo %notin% streetInd[[temp$precinct]]) {
-            #       w50[match_count] = close_ind[jj]
-            #       match_count = match_count + 1
-            #       streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-            #     }
-            #     jj = jj + 1
-            # }
-            # # --------------------------------------------
+            # Choose one mother street --------------------
+
+            match_count = jj = 1
+            streetInd = vector(mode = "list", length = 77) 
+            for (w in 1:77) {streetInd[[w]] = c(-1) }
+            w50 = rep(NA, n_matches)
+            close_ind = order(dist_temp)
+            while(match_count <= n_matches) {
+                temp = combinedMatchingSetupFix2[close_ind[jj], ]
+                if(temp$indigo %notin% streetInd[[temp$precinct]]) {
+                  w50[match_count] = close_ind[jj]
+                  match_count = match_count + 1
+                  streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
+                }
+                jj = jj + 1
+            }
+            # --------------------------------------------
 
             null_dist = combinedMatchingSetupFix2$tStat_area[w50]
 

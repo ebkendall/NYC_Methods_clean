@@ -10,10 +10,10 @@ save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/")
 
 p_val_df = vector(mode = "list", length = 13)
 
-for(i in 2:13) {p_val_df[[i]] = data.frame("HotSpot"     = rep(NA,100),
-                                           "Uniform"     = rep(NA,100),
-                                           "Random"      = rep(NA,100),
-                                           "Correlated"  = rep(NA,100))}
+for(i in 2:13) {p_val_df[[i]] = data.frame("HotSpot"     = rep(NA,200),
+                                           "Uniform"     = rep(NA,200),
+                                           "Random"      = rep(NA,200),
+                                           "Correlated"  = rep(NA,200))}
 
 whichMaxInfo = vector(mode = "list", length = 4)
 whichMaxInfo[[1]] = whichMaxInfo[[2]] = whichMaxInfo[[3]] = whichMaxInfo[[4]] = vector(mode = 'list', length = 13)
@@ -52,7 +52,7 @@ for (trialNum in 1:100) {
     }
 }
 
-pdf(paste0("../Output_noWater/Plots/pValGlobal_max_", n_matches, ".pdf"))
+pdf(paste0("../Output_noWater/Plots/pValGlobal_max_", n_matches, "_test.pdf"))
 par(mfrow=c(2,2))
 for (i in 2:13) {
   for(k in 1:4) {
