@@ -1,12 +1,12 @@
 library(sp); library(sf); library(rgeos); library(raster)
 
-load("../../Data/nycSub.RData")
-load("../../Data/ind_prec_df.rda")
-load("../../Data/gridWithin_prec.rda")
-load("../../Data/indexList_MAIN.RData")
-load("../../Data/totalStreetBuffInfo_ORIG.RData")
+load("../Data/nycSub.RData")
+load("../Data/ind_prec_df.rda")
+load("../Data/gridWithin_prec.rda")
+load("../Data/indexList_MAIN.RData")
+load("../Data/totalStreetBuffInfo_ORIG.RData")
 
-Dir = '../../Output_noWater/origGridInfo/'
+Dir = '../Output_noWater/origGridInfo/'
 print(Dir)
 
 for (k in 2:13) {

@@ -5,13 +5,19 @@ library("raster")
 
 test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
 
-    t_stat_df = data.frame("tStat_area" = NULL,
-                           "naive_pval" = NULL,
-                           "tStat_strt" = NULL)
+    t_stat_df = data.frame("tStat_area" = c(-1),
+                           "naive_pval" = c(-1),
+                           "tStat_strt" = c(-1))
 
     rowInd = 1
     
     for (jj in w50) {
+
+        s1 = combinedMatchingSetupFix$DATA$streets1[jj]
+        s2 = combinedMatchingSetupFix$DATA$streets2[jj]
+
+        area1 = combinedMatchingSetupFix$DATA$area1[jj]
+        area2 = combinedMatchingSetupFix$DATA$area2[jj]
 
         gridVals_ind_1 = combinedMatchingSetupFix$GRID_IND_1[[jj]]
         gridVals_ind_2 = combinedMatchingSetupFix$GRID_IND_2[[jj]]
@@ -78,11 +84,17 @@ test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
 
 test_stats_orig <- function(gridPointValues, sim_orig, ii) {
     
-    t_stat_df = data.frame("tStat_area" = NULL,
-                           "naive_pval" = NULL,
-                           "tStat_strt" = NULL)
+    t_stat_df = data.frame("tStat_area" = c(-1),
+                           "naive_pval" = c(-1),
+                           "tStat_strt" = c(-1))
 
     rowInd = 1
+
+    s1 = sim_orig$DATA$streets1[ii]
+    s2 = sim_orig$DATA$streets2[ii]
+
+    area1 = sim_orig$DATA$area1[ii]
+    area2 = sim_orig$DATA$area2[ii]
 
     gridValues1 = gridPointValues[sim_orig$GRID_IND_1[[ii]]]
     gridValues2 = gridPointValues[sim_orig$GRID_IND_2[[ii]]]
@@ -102,8 +114,6 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
 
     t1 = count1
     t2 = count2
-
-    print("Calculating test stats")
 
     vals = c(t1,s1,t2,s2)
     if(sum(vals == 0) > 0) {
@@ -147,7 +157,8 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
 
 match_count <- seq(10, 300, by = 10)
 
-trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
+# trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
+trialNum = 40
 set.seed(trialNum)
 
 load("../Data/indexList_MAIN.RData")
@@ -218,8 +229,8 @@ for (k in 2:13) {
           ratio_temp = max(sim_orig$DATA$area1[ii] / sim_orig$DATA$area2[ii],
                            sim_orig$DATA$area2[ii] / sim_orig$DATA$area1[ii])
 
-          dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$area1 + combinedMatchingSetupFix2$area2))^2/v1) +
-                             ((ratio_temp - combinedMatchingSetupFix2$ratioArea)^2 / v2))
+          dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2))^2/v1) +
+                             ((ratio_temp - combinedMatchingSetupFix2$DATA$ratioArea)^2 / v2))
 
           w50 = order(dist_temp)[1:j]
 
@@ -250,5 +261,5 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Trial1/sim_orig/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
-save(perc_pval_match, file = paste0("../Trial1/sim_orig/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
+save(p_val_df, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
+save(perc_pval_match, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
