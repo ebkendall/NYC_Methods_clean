@@ -157,8 +157,7 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
 
 match_count <- seq(10, 300, by = 10)
 
-# trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
-trialNum = 40
+trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(trialNum)
 
 load("../Data/indexList_MAIN.RData")
@@ -234,7 +233,7 @@ for (k in 2:13) {
 
           w50 = order(dist_temp)[1:j]
 
-          tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix, w50)
+          tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
           null_dist = tStats_temp$tStat_area
 
           orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
