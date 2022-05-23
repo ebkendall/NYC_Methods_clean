@@ -1,4 +1,4 @@
-load("../Output_noWater/sim_orig/p_vals_match_rel/p_val_df_1.dat")
+load("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_1.dat")
 final_hist = p_val_df
 
 for(j in 1:4) {
@@ -7,8 +7,8 @@ for(j in 1:4) {
   }
 }
 
-for (i in c(2:200)) {
-    load(paste0("../Output_noWater/sim_orig/p_vals_match_rel/p_val_df_", i, ".dat"))
+for (i in c(2:500)) {
+    load(paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", i, ".dat"))
     for(j in 1:4) {
         for(k in 2:13) {
             final_hist[[j]][[k]] = c(final_hist[[j]][[k]], p_val_df[[j]][[k]][15,])
@@ -18,7 +18,7 @@ for (i in c(2:200)) {
 
 folder_type = c("HotSpot", "Uniform", "Random", "Correlated")
 
-pdf("../Output_noWater/Plots/pValHistTotal_2.pdf")
+pdf("../Output_noWater/Plots/indiv_new_2.pdf")
 par(mfrow=c(2,2))
 for (i in 2:13) {
   for(k in 1:4) {

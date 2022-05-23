@@ -194,20 +194,21 @@ for (k in 2:13) {
     else if (s_name == 4) {gridPointValues = gridPointValues_cov_c_big}
     else {print("Incorrect input to start")}
 
-    # wMax_a = max(na.omit(sim_orig$area1 / sim_orig$area2))
-    # wMin_a = min(na.omit(sim_orig$area1 / sim_orig$area2))
+    wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
     
-    # wMax_s = max(na.omit(sim_orig$street1 / sim_orig$street2))
-    # wMin_s = min(na.omit(sim_orig$street1 / sim_orig$street2))
+    wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
     
-    # wMatchOk = which((combinedMatchingSetupFix$area1 / combinedMatchingSetupFix$area2) > wMin_a &
-    #                    (combinedMatchingSetupFix$area1 / combinedMatchingSetupFix$area2) < wMax_a &
-    #                    (combinedMatchingSetupFix$streets1 / combinedMatchingSetupFix$streets2) > wMin_s &
-    #                    (combinedMatchingSetupFix$streets1 / combinedMatchingSetupFix$streets2) < wMax_s)
-         
-    # combinedMatchingSetupFix2 = combinedMatchingSetupFix[wMatchOk,]
-
+    wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+                       (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
+                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
+                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+    
     combinedMatchingSetupFix2 = combinedMatchingSetupFix
+    combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
+    combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix2$GRID_IND_1[wMatchOk]
+    combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix2$GRID_IND_2[wMatchOk]
     
     v1 = sd(combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$DATA$ratioArea, na.rm=TRUE)^2
@@ -262,3 +263,56 @@ for (k in 2:13) {
 
 save(p_val_df, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
 save(perc_pval_match, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
+
+# ---------------------------------------------------------------
+# ------- Plotting everything
+# ---------------------------------------------------------------
+
+# load("../Output/sim_orig/p_vals_match_rel/perc_pval_match_1.dat")
+# final_plot = perc_pval_match
+# plot_mat = perc_pval_match
+
+# for (i in 2:100) {
+#     load(paste0("../Output/sim_orig/p_vals_match_rel/perc_pval_match_", i, ".dat"))
+#     for(j in 1:3) {
+#         for(k in 2:13) {
+#             final_plot[[j]][[k]] = rbind(final_plot[[j]][[k]], perc_pval_match[[j]][[k]])
+#             plot_mat[[j]][[k]] = cbind(plot_mat[[j]][[k]], perc_pval_match[[j]][[k]]$perc_pval_less_05)
+#         }
+#     }
+# }
+
+# folder_type = c("HotSpot", "Uniform", "Random")
+
+# pdf('../Output/Plots/pVal_num_match.pdf')
+# par(mfrow=c(3,1))
+# for (i in 2:13) {
+#   for(k in 1:3) {
+#     print(paste0(k, " ", i))
+#     pval = final_plot[[k]][[i]]
+#     temp = cbind(plot_mat[[k]][[i]][,1], rowMeans(plot_mat[[k]][[i]][,-1]))
+#     # print(t(temp))
+#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0(folder_type[k], ": pVal for B", i*100),
+#          xaxt="none", xlab = "Perc. < 0.05 is ")
+#     axis(1, seq(10,500,20), las=2)
+#     abline(h=0.05, col = "red")
+#     lines(temp[,1], temp[,2], col = "purple", lwd = 2)
+#   }
+# }
+# dev.off()
+
+# pdf('../Output/Plots/pVal_num_match2.pdf')
+# par(mfrow=c(3,1))
+# for (i in 2:13) {
+#   for(k in 1:3) {
+#     pval = plot_mat[[k]][[i]]
+#     plot(pval[,1], pval[,2], main = paste0(folder_type[k], ": pVal for B", i*100),
+#          xaxt="none", xlab = "Perc. < 0.05 is ")
+#     axis(1, seq(10,500,20), las=2)
+#     for(w in 1:100) {
+#         abline(lm(pval[,w+1] ~ pval[,1]), col = w)
+#         # lines(pval[,1], pval[,w+1], col = w)
+#     }
+#   }
+# }
+# dev.off()

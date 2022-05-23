@@ -160,7 +160,6 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
     return(t_stat_df)
 }
 
-
 save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/")
 
 n_matches = 150
@@ -197,19 +196,21 @@ for (s_name in 1:4) {
 
         global_null[[k]] = matrix(nrow = max(indexList_MAIN), ncol = n_matches)
          
-        # wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-        # wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-         
-        # wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-        # wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-         
-        # wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-        #                    (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-        #                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-        #                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
-         
-        # combinedMatchingSetupFix2 = combinedMatchingSetupFix[wMatchOk,]
+        wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+        wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+
+        wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+        wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+
+        wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+                          (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
+                          (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
+                          (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+
         combinedMatchingSetupFix2 = combinedMatchingSetupFix
+        combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
+        combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix2$GRID_IND_1[wMatchOk]
+        combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix2$GRID_IND_2[wMatchOk]
 
         # =====================================================================
 
@@ -224,6 +225,9 @@ for (s_name in 1:4) {
             # MAKE FUNCTION
             orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
             stat_temp = orig_temp$tStat_area
+            
+            # print("Observed Test Stat: ")
+            # print(stat_temp)
 
             dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2))^2/v1) +
                                 ((ratio_temp - combinedMatchingSetupFix2$DATA$ratioArea)^2 / v2))
@@ -232,7 +236,7 @@ for (s_name in 1:4) {
 
             # Choose one mother street --------------------
             match_count = jj = 1
-            streetInd = vector(mode = "list", length = 77) 
+            streetInd = vector(mode = "list", length = 77)
             for (w in 1:77) {streetInd[[w]] = c(-1) }
             w50 = rep(NA, n_matches)
             close_ind = order(dist_temp)
@@ -249,6 +253,8 @@ for (s_name in 1:4) {
 
             tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
             null_dist = tStats_temp$tStat_area
+            # print("Null Distribution: ")
+            # print(null_dist)
 
             global_null[[k]][ii,] = null_dist
         }
@@ -285,8 +291,7 @@ for (s_name in 1:4) {
             }
             print(paste0(max(temp_max, na.rm = T), " ", which(temp_max == max(temp_max, na.rm = T))))
             global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
-            global_t_stat[[k]][rep, 2] = 
-                                temp_loc[which(temp_max == max(temp_max, na.rm = T))[1]]
+            global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
         }
 
     }
