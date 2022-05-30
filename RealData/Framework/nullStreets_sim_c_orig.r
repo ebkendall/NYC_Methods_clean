@@ -6,13 +6,15 @@ load("../Data/indexList_MAIN.RData")
 load("../Data/totalStreetBuffInfo_ORIG.RData")
 load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
+load('../Data/monthKey.rda')
 Dir = '../Output/origGridInfo/'
 print(Dir)
 
 for (k in 2:13) {
 
   sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
-                                     "streets1" = rep(NA, 164), "streets2" = rep(NA, 164)),
+                                     "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
+                                     "t_stat_pval" = rep(NA, 164), "naive_pval" = rep(NA, 164)),
                    ARR_IND_1 = vector(mode = 'list', length = 164),
                    ARR_IND_2 = vector(mode = 'list', length = 164),
                    OFF_IND_1 = vector(mode = 'list', length = 164),
@@ -118,11 +120,92 @@ for (k in 2:13) {
     
     off_1_ind = o_grid1$main_ind[which(offense1_total > 0)]
     off_2_ind = o_grid2$main_ind[which(offense2_total > 0)]
+    
+    arr_1_pts = dataArr_sub[arr_1_ind, ]
+    arr_2_pts = dataArr_sub[arr_2_ind, ]
+    
+    off_1_pts = dataOff_sub[off_1_ind, ]
+    off_2_pts = dataOff_sub[off_2_ind, ]
+    
+    df_a_1 <- data.frame(table(arr_1_pts$yearmonth))
+    df_a_2 <- data.frame(table(arr_2_pts$yearmonth))
+    df_o_1 <- data.frame(table(off_1_pts$yearmonth))
+    df_o_2 <- data.frame(table(off_2_pts$yearmonth))
+    
+    freq_a1 = freq_a2 = freq_o1 = freq_o2 = data.frame("Var1" = monthKey, 
+                                                       "Freq" = 0)
+    if(nrow(arr_1_pts) != 0) {
+      freq_a1$Freq <- df_a_1$Freq[match(freq_a1$Var1, df_a_1$Var1)]
+      freq_a1$Freq[is.na(freq_a1$Freq)] <- 0
+    }
+    if(nrow(arr_2_pts) != 0) {
+      freq_a2$Freq <- df_a_2$Freq[match(freq_a2$Var1, df_a_2$Var1)]
+      freq_a2$Freq[is.na(freq_a2$Freq)] <- 0
+    }
+    if(nrow(off_1_pts) != 0) {
+      freq_o1$Freq <- df_o_1$Freq[match(freq_o1$Var1, df_o_1$Var1)]
+      freq_o1$Freq[is.na(freq_o1$Freq)] <- 0
+    }
+    if(nrow(off_2_pts) != 0) {
+      freq_o2$Freq <- df_o_2$Freq[match(freq_o2$Var1, df_o_2$Var1)]
+      freq_o2$Freq[is.na(freq_o2$Freq)] <- 0
+    }
+    
+    #Final results
+    return_pval = NA
+    
+    arr1 <- freq_a1$Freq
+    arr2 <- freq_a2$Freq
+    off1 <- freq_o1$Freq
+    off2 <- freq_o2$Freq
+    
+    if(sum(off1 == 0) > 0 | sum(off2 == 0) > 0) {
+      off1 <- off1 + 1
+      off2 <- off2 + 1
+    }
+    
+    arr1 <- arr1 / off1
+    arr2 <- arr2 / off2
+    
+    arrDiff <- data.frame(arr1 - arr2)
+    colnames(arrDiff) <- c("difference")
+    
+    #Scales the differences to be compatible with "arima"
+    newDifference <- arrDiff$difference/sd(arrDiff$difference)
+    if(!is.na(sum(newDifference)))  {
+      ## Now do a naive test of the means similar to how we were doing it for the policing example
+      ## PERFORMING THE ARIMA TEST!! ##
+      myModel = arima(newDifference, order = c(1, 0, 0))
+      
+      SE = sqrt(myModel$var.coef[2,2])
+      EST = myModel$coef[2]
+      
+      if (EST < 0) {
+        PVALUE = as.numeric(2*pnorm(EST, mean=0, sd=SE))
+      } else {
+        PVALUE = as.numeric(2*(1 - pnorm(EST, mean=0, sd=SE)))
+      }
+      
+      return_pval = PVALUE
+    }
+    
+    # Naive p-value
+    count1 = nrow(arr_1_pts)
+    count2 = nrow(arr_2_pts)
+    n = count1 + count2
+    p = 0.5
+    pval = NA
+    
+    if (count1 <= n/2) {
+      pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
+    } else {
+      pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
+    }
 
     s1 = totalStreetBuffInfo_ORIG[[k]][[i]]$streetLength1
     s2 = totalStreetBuffInfo_ORIG[[k]][[i]]$streetLength2
 
-    sim_orig$DATA[i,] = c(area1, area2, s1, s2)
+    sim_orig$DATA[i,] = c(area1, area2, s1, s2, return_pval, pval)
     sim_orig$ARR_IND_1[[i]] = arr_1_ind
     sim_orig$ARR_IND_2[[i]] = arr_2_ind
     sim_orig$OFF_IND_1[[i]] = off_1_ind
