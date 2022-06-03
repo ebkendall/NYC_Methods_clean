@@ -40,7 +40,8 @@ for (index in 2:13) {
     nullStr_point_data <- list(DATA = data.frame("precinct" = rep(-1,l), "indigo" = rep(-1,l), "juliet" = rep(-1,l),
                                       "streets1" = rep(-1,l), "streets2" = rep(-1,l),
                                       "area1" = rep(-1,l), "area2" = rep(-1,l), "splitProper" = rep(F,l),
-                                      "t_stat_pval" = rep(-1,l), "naive_pval" = rep(-1,l)),
+                                      "t_stat_pval" = rep(-1,l), "coeff" = rep(-1,l), "se" = rep(-1,l),
+                                      "t_stat_new" = rep(-1,l), "naive_pval" = rep(-1,l)),
                               ARR_IND_1 = vector(mode = 'list', length = l),
                               ARR_IND_2 = vector(mode = 'list', length = l),
                               OFF_IND_1 = vector(mode = 'list', length = l),
@@ -108,7 +109,7 @@ for (index in 2:13) {
             }
             
             #Final results
-            return_pval = NA
+            return_pval = SE = EST = NA
             
             arr1 <- freq_a1$Freq
             arr2 <- freq_a2$Freq
@@ -161,7 +162,7 @@ for (index in 2:13) {
             nullStr_point_data$DATA[rowNum,] = c(k, i, j,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength1,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength2,
-                                                 area1, area2, T, return_pval, pval)
+                                                 area1, area2, T, return_pval, EST, SE, EST / SE, pval)
             
             nullStr_point_data$ARR_IND_1[[rowNum]] = arr_1_ind
             nullStr_point_data$ARR_IND_2[[rowNum]] = arr_2_ind

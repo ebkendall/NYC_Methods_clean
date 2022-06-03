@@ -14,7 +14,8 @@ for (k in 2:13) {
 
   sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
                                      "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
-                                     "t_stat_pval" = rep(NA, 164), "naive_pval" = rep(NA, 164)),
+                                     "t_stat_pval" = rep(NA, 164), "coeff" = rep(NA, 164), "se" = rep(NA, 164),
+                                     "t_stat_new" = rep(NA, 164), "naive_pval" = rep(NA, 164)),
                    ARR_IND_1 = vector(mode = 'list', length = 164),
                    ARR_IND_2 = vector(mode = 'list', length = 164),
                    OFF_IND_1 = vector(mode = 'list', length = 164),
@@ -152,7 +153,7 @@ for (k in 2:13) {
     }
     
     #Final results
-    return_pval = NA
+    return_pval = SE = EST = NA
     
     arr1 <- freq_a1$Freq
     arr2 <- freq_a2$Freq
@@ -205,7 +206,7 @@ for (k in 2:13) {
     s1 = totalStreetBuffInfo_ORIG[[k]][[i]]$streetLength1
     s2 = totalStreetBuffInfo_ORIG[[k]][[i]]$streetLength2
 
-    sim_orig$DATA[i,] = c(area1, area2, s1, s2, return_pval, pval)
+    sim_orig$DATA[i,] = c(area1, area2, s1, s2, return_pval, EST, SE, EST / SE, pval)
     sim_orig$ARR_IND_1[[i]] = arr_1_ind
     sim_orig$ARR_IND_2[[i]] = arr_2_ind
     sim_orig$OFF_IND_1[[i]] = off_1_ind

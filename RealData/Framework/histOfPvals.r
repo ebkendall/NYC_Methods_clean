@@ -1,8 +1,8 @@
-load("../Output/p_vals_match_rel/p_val_df_1.dat")
+load("../Output/p_vals_match_rel/p_val_df_1_new_stat_noKern.dat")
 
-pdf("../Output/Plots/pValHistTotal.pdf")
+pdf("../Output/Plots/pValHistTotal_new_stat_noKern.pdf")
 par(mfrow=c(2,2))
-for(k in c(5, 10, 15, 20, 25, 30)) {
+for(k in 15) { #c(5, 10, 15, 20, 25, 30)
   for (i in 2:13) {
     pval = p_val_df[[i]][k,]
     hist(pval, main = paste0("Matches: ", k, ", pVal for B", i*100),

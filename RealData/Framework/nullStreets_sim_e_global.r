@@ -8,295 +8,133 @@
 
 load("../Data/indexList_MAIN.RData")
 
-test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
-
-    t_stat_df = data.frame("tStat_area" = c(-1),
-                           "naive_pval" = c(-1),
-                           "tStat_strt" = c(-1))
-
-    rowInd = 1
-    
-    for (jj in w50) {
-
-        s1 = combinedMatchingSetupFix$DATA$streets1[jj]
-        s2 = combinedMatchingSetupFix$DATA$streets2[jj]
-
-        area1 = combinedMatchingSetupFix$DATA$area1[jj]
-        area2 = combinedMatchingSetupFix$DATA$area2[jj]
-
-        gridVals_ind_1 = combinedMatchingSetupFix$GRID_IND_1[[jj]]
-        gridVals_ind_2 = combinedMatchingSetupFix$GRID_IND_2[[jj]]
-
-        gridValues1 = gridPointValues[gridVals_ind_1]
-        gridValues2 = gridPointValues[gridVals_ind_2]
-
-        arr1 <- sum(gridValues1)
-        arr2 <- sum(gridValues2)
-
-        count1 = count2 = 0
-        #count on one side of boundary
-        if(arr1 > 0) {count1 = rpois(1, arr1)}
-        else {count1 = rpois(1, 1)} #assume there is at least 1
-        #count on the other side of the boundary
-        if(arr2 > 0) {count2 = rpois(1, arr2)}
-        else {count2 = rpois(1, 1)} #assume there exists at least 1
-
-        t1 = count1
-        t2 = count2
-
-        vals = c(t1,s1,t2,s2)
-        if(sum(vals == 0) > 0) {
-            if(vals[2] == 0 | vals[4] == 0) {
-                vals = vals+1
-            } else {
-                vals[1] = vals[1] + 1
-                vals[3] = vals[3] + 1
-            }
-        } 
-
-        tStat = tStat_a = NA
-
-        # Want division to be large / small (streets)
-        if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
-            tStat = (vals[1]/vals[2]) / (vals[3]/vals[4])
-        } else {
-            tStat = (vals[3]/vals[4]) / (vals[1]/vals[2])
-        }
-
-        # Want division to be large / small (area)
-        if ((vals[1]/area1) > (vals[3]/area2)) {
-            tStat_a = (vals[1]/area1) / (vals[3]/area2)
-        } else {
-            tStat_a = (vals[3]/area2) / (vals[1]/area1)
-        }
-
-        n = count1 + count2
-        p = 0.5
-        pval = NA
-
-        if (count1 <= n/2) {
-            pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
-        } else {
-            pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
-        }
-
-        t_stat_df[rowInd, ] = c(tStat_a, pval, tStat)
-        rowInd = rowInd + 1
-    }
-
-    return(t_stat_df)
-}
-
-test_stats_orig <- function(gridPointValues, sim_orig, ii) {
-    
-    t_stat_df = data.frame("tStat_area" = c(-1),
-                           "naive_pval" = c(-1),
-                           "tStat_strt" = c(-1))
-
-    rowInd = 1
-
-    s1 = sim_orig$DATA$streets1[ii]
-    s2 = sim_orig$DATA$streets2[ii]
-
-    area1 = sim_orig$DATA$area1[ii]
-    area2 = sim_orig$DATA$area2[ii]
-
-    gridValues1 = gridPointValues[sim_orig$GRID_IND_1[[ii]]]
-    gridValues2 = gridPointValues[sim_orig$GRID_IND_2[[ii]]]
-
-    arr1 <- sum(gridValues1)
-    arr2 <- sum(gridValues2)
-
-    count1 = count2 = 0
-
-    #count on one side of boundary
-    if(arr1 > 0) {count1 = rpois(1, arr1)}
-    else {count1 = rpois(1, 1)} #assume there is at least 1
-
-    #count on the other side of the boundary
-    if(arr2 > 0) {count2 = rpois(1, arr2)}
-    else {count2 = rpois(1, 1)} #assume there exists at least 1
-
-    t1 = count1
-    t2 = count2
-
-    vals = c(t1,s1,t2,s2)
-    if(sum(vals == 0) > 0) {
-        if(vals[2] == 0 | vals[4] == 0) {
-            vals = vals+1
-        } else {
-            vals[1] = vals[1] + 1
-            vals[3] = vals[3] + 1
-        }
-    }
-
-    tStat = tStat_a = pval = NA
-
-    # Want division to be large / small (streets)
-    if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
-        tStat = (vals[1]/vals[2]) / (vals[3]/vals[4])
-    } else {
-        tStat = (vals[3]/vals[4]) / (vals[1]/vals[2])
-    }
-
-    # Want division to be large / small (area)
-    if ((vals[1]/area1) > (vals[3]/area2)) {
-        tStat_a = (vals[1]/area1) / (vals[3]/area2)
-    } else {
-        tStat_a = (vals[3]/area2) / (vals[1]/area1)
-    }
-
-    n = count1 + count2
-    p = 0.5
-
-    if (count1 <= n/2) {
-        pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
-    } else {
-        pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
-    }
-
-    t_stat_df[rowInd, ] = c(tStat_a, pval, tStat)
-
-    return(t_stat_df)
-}
-
-save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/")
-
 n_matches = 150
-trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
+trialNum = 1
 set.seed(trialNum)
 
 `%notin%` <- Negate(`%in%`)
 
-file_names <- c(paste0("../Data/Surfaces/gridPointValues_hotspot_", trialNum,".rda"),
-                paste0("../Data/Surfaces/gridPointValues_uniform_", trialNum,".rda"),
-                paste0("../Data/Surfaces/gridPointValues_cov_r_", trialNum,".rda"),
-                paste0("../Data/Surfaces/gridPointValues_cov_c_", trialNum,".rda"))
-tau = 0.5  
 # Step 1 -----------------------------------------------------------------------
 
-for (s_name in 1:4) {
-    # Run this for the different surface types
-    global_null = vector(mode = "list", length = 13)
+# Run this for the different surface types
+global_null = vector(mode = "list", length = 13)
 
-    load(file_names[s_name])
-    gridPointValues = NULL
 
-    if (s_name == 1) {gridPointValues = gridPointValues_hotspot * tau}
-    else if (s_name == 2) {gridPointValues = gridPointValues_uniform}
-    else if (s_name == 3) {gridPointValues = gridPointValues_cov_r}
-    else if (s_name == 4) {gridPointValues = gridPointValues_cov_c_big}
-    else {print("Incorrect input to start")}
+for (k in 2:13) {
+    global_null[[k]] = matrix(nrow = 164, ncol = n_matches)
+     
+    print(k)
+  
+    load(paste0('../Output/nullGridInfo/combinedMatchingSetup', k, ".dat"))
+    load(paste0('../Output/origGridInfo/sim_orig_', k, '.dat'))
 
-    for (k in 2:13) {
-        # We need a global test for each buffer width
-        print(paste0(s_name, " ", k))
-        load(paste0("../Output_noWater/nullGridInfo/combinedMatchingSetup", k, ".dat"))
-        load(paste0('../Output_noWater/origGridInfo/sim_orig_', k,".dat"))
+    wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
 
-        global_null[[k]] = matrix(nrow = max(indexList_MAIN), ncol = n_matches)
-         
-        wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-        wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
 
-        wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-        wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+                        (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
+                        (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
+                        (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
 
-        wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                          (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                          (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                          (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+    wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_pval))
+    wMatchOk = intersect(wMatchOk1, wMatchOk2)
+    
+    combinedMatchingSetupFix2 = combinedMatchingSetupFix
+    combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
+    combinedMatchingSetupFix2$ARR_IND_1 = combinedMatchingSetupFix2$ARR_IND_1[wMatchOk]
+    combinedMatchingSetupFix2$ARR_IND_2 = combinedMatchingSetupFix2$ARR_IND_2[wMatchOk]
+    combinedMatchingSetupFix2$OFF_IND_1 = combinedMatchingSetupFix2$OFF_IND_1[wMatchOk]
+    combinedMatchingSetupFix2$OFF_IND_2 = combinedMatchingSetupFix2$OFF_IND_2[wMatchOk]
+    
+    # =====================================================================
 
-        combinedMatchingSetupFix2 = combinedMatchingSetupFix
-        combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
-        combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix2$GRID_IND_1[wMatchOk]
-        combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix2$GRID_IND_2[wMatchOk]
+    tot_lengths = data.frame("arr1" = sapply(combinedMatchingSetupFix2$ARR_IND_1, length),
+                           "arr2" = sapply(combinedMatchingSetupFix2$ARR_IND_2, length),
+                           "off1" = sapply(combinedMatchingSetupFix2$OFF_IND_1, length),
+                           "off2" = sapply(combinedMatchingSetupFix2$OFF_IND_2, length))
+    tot_lengths[which(tot_lengths$off1 == 0 | tot_lengths$off2 == 0), ] = NA
+    
+    v1 = sd(tot_lengths$off1 + tot_lengths$off2, na.rm=TRUE)^2
+    rat_off = tot_lengths$off1 / tot_lengths$off2
+    rat_off[which(rat_off < 1)] = 1 / rat_off[which(rat_off < 1)]
+    v2 = sd(rat_off, na.rm=TRUE)^2  
 
-        # =====================================================================
+    # Need to compensate for 0s
+    off_num = data.frame("off1" = sapply(sim_orig$OFF_IND_1, length),
+                        "off2" = sapply(sim_orig$OFF_IND_2, length))
+    off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] = 
+        off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] + 1
+    
 
-        v1 = sd(combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2, na.rm=TRUE)^2
-        v2 = sd(combinedMatchingSetupFix2$DATA$ratioArea, na.rm=TRUE)^2
+    for(ii in indexList_MAIN) {
+        off_temp = off_num$off1[ii] + off_num$off2[ii]
+        ratio_temp = max(off_num$off1[ii] / off_num$off2[ii],
+                        off_num$off2[ii] / off_num$off1[ii])
 
-        for(ii in indexList_MAIN) {
-            area_temp = sim_orig$DATA$area1[ii] + sim_orig$DATA$area2[ii]
-            ratio_temp = max(sim_orig$DATA$area1[ii] / sim_orig$DATA$area2[ii],
-                            sim_orig$DATA$area2[ii] / sim_orig$DATA$area1[ii])
+        dist_temp = sqrt(((off_temp - (tot_lengths$off1 + tot_lengths$off2))^2/v1) +
+                            ((ratio_temp - rat_off)^2 / v2))
+        
+        stat_temp = sim_orig$DATA$t_stat_pval[ii]
 
-            # MAKE FUNCTION
-            orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
-            stat_temp = orig_temp$tStat_area
-            
-            # print("Observed Test Stat: ")
-            # print(stat_temp)
+        # w50 = order(dist_temp)[1:n_matches]
 
-            dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2))^2/v1) +
-                                ((ratio_temp - combinedMatchingSetupFix2$DATA$ratioArea)^2 / v2))
-
-            # w50 = order(dist_temp)[1:n_matches]
-
-            # Choose one mother street --------------------
-            match_count = jj = 1
-            streetInd = vector(mode = "list", length = 77)
-            for (w in 1:77) {streetInd[[w]] = c(-1) }
-            w50 = rep(NA, n_matches)
-            close_ind = order(dist_temp)
-            while(match_count <= n_matches) {
-                temp = combinedMatchingSetupFix2$DATA[close_ind[jj], ]
-                if(temp$indigo %notin% streetInd[[temp$precinct]]) {
-                  w50[match_count] = close_ind[jj]
-                  match_count = match_count + 1
-                  streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-                }
-                jj = jj + 1
-            }
-            # --------------------------------------------
-
-            tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
-            null_dist = tStats_temp$tStat_area
-            # print("Null Distribution: ")
-            # print(null_dist)
-
-            global_null[[k]][ii,] = null_dist
+        # Choose one mother street --------------------
+        match_counter = jj = 1
+        streetInd = vector(mode = "list", length = 77)
+        for (w in 1:77) {streetInd[[w]] = c(-1) }
+        w50 = rep(NA, n_matches)
+        close_ind = order(dist_temp)
+        while(match_counter <= n_matches) {
+          temp = combinedMatchingSetupFix2$DATA[close_ind[jj], ]
+          if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
+            w50[match_counter] = close_ind[jj]
+            match_counter = match_counter + 1
+            streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
+          }
+          jj = jj + 1
         }
+        # --------------------------------------------
 
+        null_dist = combinedMatchingSetupFix2$DATA$t_stat_pval[w50]
+
+        global_null[[k]][ii,] = null_dist
     }
 
-    save(global_null, file = paste0("../Output_noWater/sim_results/Global/", save_type[s_name],
-                                    "global_null_", trialNum, ".dat"))
 }
+
+save(global_null, file = paste0("../Output/Global/global_null_", trialNum, ".dat"))
 
 # Step 2 -----------------------------------------------------------------------
 
-for (s_name in 1:4) {
+load(paste0("../Output/Global/global_null_", trialNum, ".dat"))
+global_t_stat <- vector(mode = "list", length = 13)
 
-    load(paste0("../Output_noWater/sim_results/Global/", save_type[s_name], "global_null_", trialNum, ".dat"))
-    global_t_stat <- vector(mode = "list", length = 13)
+for(k in 2:13) {
 
-    for(k in 2:13) {
+    print(k)
+    global_t_stat[[k]] = data.frame("max_t_stat" = rep(NA, n_matches),
+                                    "max_loc" = rep(NA, n_matches))
+    
+    for (rep in 1:n_matches) {
+    # This is the repetition to get the null distribution
+        temp_loc = temp_max = c()
+        myInd = 1
+        for(ii in indexList_MAIN) {
+            rand_ind = sample(c(1:n_matches), 1)
 
-        print(k)
-        global_t_stat[[k]] = data.frame("max_t_stat" = rep(NA, n_matches),
-                                        "max_loc" = rep(NA, n_matches))
-        
-        for (rep in 1:n_matches) {
-        # This is the repetition to get the null distribution
-            temp_loc = temp_max = c()
-            myInd = 1
-            for(ii in indexList_MAIN) {
-                rand_ind = sample(c(1:n_matches), 1)
-
-                temp_loc[myInd] = ii
-                temp_max[myInd] = global_null[[k]][ii, rand_ind]
-                myInd = myInd + 1
-            }
-            print(paste0(max(temp_max, na.rm = T), " ", which(temp_max == max(temp_max, na.rm = T))))
-            global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
-            global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
+            temp_loc[myInd] = ii
+            temp_max[myInd] = global_null[[k]][ii, rand_ind]
+            myInd = myInd + 1
         }
-
+        print(paste0(max(temp_max, na.rm = T), " ", which(temp_max == max(temp_max, na.rm = T))))
+        global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
     }
 
-    save(global_t_stat, file = paste0("../Output_noWater/sim_results/Global/", save_type[s_name],
-                                    "global_t_stat_", trialNum, ".dat"))
 }
+
+save(global_t_stat, file = paste0("../Output/Global/global_t_stat_", trialNum, ".dat"))
 

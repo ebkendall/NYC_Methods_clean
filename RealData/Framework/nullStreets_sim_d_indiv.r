@@ -22,18 +22,20 @@ for (k in 2:13) {
   load(paste0('../Output/nullGridInfo/combinedMatchingSetup', k, ".dat"))
   load(paste0('../Output/origGridInfo/sim_orig_', k, '.dat'))
 
-  # wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-  # wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-  # 
-  # wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-  # wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-  # 
-  # wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-  #                    (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-  #                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-  #                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
-  # 
-  wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_pval))
+  wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+  wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+
+  wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+  wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+
+  wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+                     (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
+                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
+                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+
+  wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_pval))
+  wMatchOk = intersect(wMatchOk1, wMatchOk2)
+  
   combinedMatchingSetupFix2 = combinedMatchingSetupFix
   combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
   combinedMatchingSetupFix2$ARR_IND_1 = combinedMatchingSetupFix2$ARR_IND_1[wMatchOk]
@@ -79,9 +81,8 @@ for (k in 2:13) {
       # w50 = order(dist_temp)[1:j]
       
       # Choose one mother street --------------------
-      
       match_counter = jj = 1
-      streetInd = vector(mode = "list", length = 77) 
+      streetInd = vector(mode = "list", length = 77)
       for (w in 1:77) {streetInd[[w]] = c(-1) }
       w50 = rep(NA, j)
       close_ind = order(dist_temp)
@@ -98,10 +99,10 @@ for (k in 2:13) {
       
 
       # tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
-      null_dist = combinedMatchingSetupFix2$DATA$t_stat_pval[w50]
+      null_dist = combinedMatchingSetupFix2$DATA$t_stat_new[w50]
 
       # orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
-      stat_temp = sim_orig$DATA$t_stat_pval[ii]
+      stat_temp = sim_orig$DATA$t_stat_new[ii]
 
       test = density(null_dist, bw = "ucv")
       xx = test$x
@@ -113,6 +114,7 @@ for (k in 2:13) {
       p.scaled <- p.unscaled / C
       
       pval[ii] = p.scaled
+      # pval[ii] = mean(null_dist >= stat_temp)
     }
 
     perc_pval = mean(pval < 0.05, na.rm=TRUE)
@@ -122,8 +124,8 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
-save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
+save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_", trialNum, "_new_stat_noKern.dat"))
+save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_", trialNum, "_new_stat_noKern.dat"))
 
 # ---------------------------------------------------------------
 # ------- Plotting everything
