@@ -1,32 +1,13 @@
-load("../Output_noWater/sim_orig/p_vals_match_rel/p_val_df_1.dat")
+load("../Output_tree/p_vals_match_rel/p_val_df_1.dat")
 final_hist = p_val_df
 
-for(j in 1:4) {
-  for (k in 2:13) {
-    final_hist[[j]][[k]] = final_hist[[j]][[k]][15,]
-  }
-}
-
-for (i in c(2:200)) {
-    load(paste0("../Output_noWater/sim_orig/p_vals_match_rel/p_val_df_", i, ".dat"))
-    for(j in 1:4) {
-        for(k in 2:13) {
-            final_hist[[j]][[k]] = c(final_hist[[j]][[k]], p_val_df[[j]][[k]][15,])
-        }
-    }
-}
-
-folder_type = c("HotSpot", "Uniform", "Random", "Correlated")
-
-pdf("../Output_noWater/Plots/pValHistTotal_2.pdf")
+pdf("../Output_tree/Plots/pValHistTotal_street_new.pdf")
 par(mfrow=c(2,2))
 for (i in 2:13) {
-  for(k in 1:4) {
-    pval = final_hist[[k]][[i]]
-    hist(pval, main = paste0(folder_type[k], ": pVal for B", i*100),
-         xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
-         xlim=c(0,1))
-  }
+  pval = final_hist[[i]][5,]
+  hist(pval, main = paste0("pVal for B", i*100),
+        xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
+        xlim=c(0,1))
 }
 dev.off()
 
@@ -154,3 +135,96 @@ dev.off()
 # 93, 43, 99, 129, 151, 138, 41, 39, 52, 86, 71, 110, 63, 7, 87, 130, 158, 
 # 82, 83, 159, 65, 47, 5, 160, 163, 161, 67, 133, 155, 112, 157, 128, 12, 17,
 # 147, 134, 156, 140, 58, 162, 164
+
+
+
+load('../Data/indexList_MAIN.RData')
+load("../Data/nycSub.RData")
+load("../Data/ind_prec_df.rda")
+load("../Data/totalStreetBuffInfo_ORIG.RData")
+load("../Output_tree/origGridInfo/sim_orig_7.dat")
+load("../Data/treesByPrec.RData")
+
+plotBorderBufferArr <- function(ind164, buf) {
+  
+  prec1 = ind_prec_df$prec1[ind164]
+  prec2 = ind_prec_df$prec2[ind164]
+  
+  prec_ind1 = which(nycSub$Precinct == prec1)
+  prec_ind2 = which(nycSub$Precinct == prec2)
+  nyc_small = nycSub[c(prec_ind1, prec_ind2), ]
+  
+  tempOverlap = gIntersection(totalStreetBuffInfo_ORIG[[buf]][[ind164]]$buffer, nyc_small,
+                              byid = T)
+  
+  # Determining which buffer goes with which side
+  poly_order = tempOverlap@plotOrder[1:2]
+  
+  int_1 = gIntersection(tempOverlap[poly_order[1], ], nyc_small[1, ])
+  int_2 = gIntersection(tempOverlap[poly_order[1], ], nyc_small[2, ])
+  
+  if(is.null(int_1)) {
+    int_1 = 0
+  } else {
+    int_1 = int_1@polygons[[1]]@area
+  }
+  
+  if(is.null(int_2)) {
+    int_2 = 0
+  } else {
+    int_2 = int_2@polygons[[1]]@area
+  }
+  
+  if(int_1 < int_2) {
+    temp = poly_order[1]
+    poly_order[1] = poly_order[2]
+    poly_order[2] = temp
+  }
+  
+  plot(tempOverlap, lwd = 0.5, asp = 1, main = paste0("NYC Precincts: ind ", ind164),
+       xlab = "", ylab = "")
+  
+  plot(nyc_small[1,], border = "red", add = T)
+  plot(nyc_small[2,], border = "blue", add = T)
+  
+  poly1 = tempOverlap[poly_order[1], ]
+  poly2 = tempOverlap[poly_order[2], ]
+  
+  poly_ind1 = poly1@polygons[[1]]@plotOrder[1]
+  poly_ind2 = poly2@polygons[[1]]@plotOrder[1]
+  # points(dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == prec1],
+  #        dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == prec1],
+  #        col = "black")
+  # points(dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == prec2],
+  #        dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == prec2],
+  #        col = "black")
+  p1 = point.in.polygon(treesByPrec[[prec_ind1]][,1], treesByPrec[[prec_ind1]][,2],
+                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
+                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
+  p2 = point.in.polygon(treesByPrec[[prec_ind2]][,1], treesByPrec[[prec_ind2]][,2],
+                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
+                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
+  points(treesByPrec[[prec_ind2]]$x[p2 > 0],
+         treesByPrec[[prec_ind2]]$y[p2 > 0],
+         col = "blue")
+  points(treesByPrec[[prec_ind1]]$x[p1 > 0],
+         treesByPrec[[prec_ind1]]$y[p1 > 0],
+         col = "red")
+
+  
+  plot(tempOverlap, border = "green", lwd = 2, add = T)
+  # plot(tempOverlap[poly_order[1], ], col = "red", add = T)
+  # plot(tempOverlap[poly_order[2], ], col = "blue", add = T)
+  
+  # plot(totalStreetBuffInfo_ORIG[[buf]][[ind164]]$buffer, border = "red",  add = T)
+  
+}
+
+buff = 7
+pdf(paste0("../Output_tree/Plots/obsBordersTreesOpp", buff, ".pdf"))
+par(mfrow=c(2,2))
+for(i in indexList_MAIN) {
+  print(i)
+  plotBorderBufferArr(i, buff)
+}
+dev.off()
