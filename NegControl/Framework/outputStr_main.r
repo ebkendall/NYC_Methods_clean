@@ -5,17 +5,27 @@ load("../Data/streetsByPrec.RData")             # streetsByPrec
 load("../Data/nycSub.RData")
 
 index <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-
+index = 2
 load(paste0("/blue/jantonelli/emmett.kendall/JoeyProject/Crime10-31-2021/NullStreetInfo/streets", index, ".dat"))  # longStrBroke
-
+load('newInfo/streets2.dat')
 # Buffer Splitting function
 bufferSplit_null <- function(myLine, buf) {
   
   temp = myLine
   
   temp_coords = temp@lines[[1]]@Lines[[1]]@coords
-  unique_coords = matrix(temp_coords[!(duplicated(temp_coords)|duplicated(temp_coords, fromLast=TRUE))],
-                         nrow=2,ncol=2)
+  
+  if(sum(temp_coords[1,] == temp_coords[nrow(temp_coords), ]) == 2) {
+    dup = temp_coords[!(duplicated(temp_coords)|duplicated(temp_coords, fromLast=TRUE))]
+    unique_coords = matrix(dup, nrow=length(dup)/2)
+    
+    ind1 = which(temp_coords[,"x"] == unique_coords[1,1] & temp_coords[,"y"] == unique_coords[1,2])
+    
+    coord_p1 = temp_coords[(ind1+1):nrow(temp_coords), ]
+    coord_p2 = temp_coords[1:ind1, ]
+    coord_sub = rbind(coord_p1, coord_p2)
+    temp@lines[[1]]@Lines[[1]]@coords = coord_sub
+  }
   
   tempBuff = gBuffer(temp, width = buf)
   topCoord = temp@lines[[1]]@Lines[[1]]@coords[1:2,]
@@ -60,8 +70,8 @@ for (k in 1:77) {
             temp_strt = gIntersection(temp, streetsByPrec[[k]], byid = T)
             streetLength1 = streetLength2 = NA
             # Check if there exists streets on both sides
-            if(length(temp_strt@lines) == 2) {
-              if(!is.null(temp_strt)){
+            if(!is.null(temp_strt)) {
+              if(length(temp_strt@lines) == 2){
                 streetLength1 <- gLength(temp_strt[1,]) # corresponds to temp@polygons[[1]]
                 streetLength2 <- gLength(temp_strt[2,]) # corresponds to temp@polygons[[2]]
               }

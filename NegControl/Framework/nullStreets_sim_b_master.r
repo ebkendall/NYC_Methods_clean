@@ -24,7 +24,7 @@ for (index in 2:13) {
                               GRID_IND_2 = vector(mode = 'list', length = l))
     rowNum = 1
 
-    load(paste0("../Data/OutputStrInfo_noWater/strInfo_", index, "_", k, ".dat")) # contains the buffer object
+    load(paste0("../Data/OutputStrInfo_realData/strInfo_", index, "_", k, ".dat")) # contains the buffer object
 
     print(paste0("Total length: ", length(streetLengthInfo_null)))
     for(i in 1:length(streetLengthInfo_null)) {

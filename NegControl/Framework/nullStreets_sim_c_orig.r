@@ -3,7 +3,7 @@ library(sp); library(sf); library(rgeos); library(raster)
 load("../Data/nycSub.RData")
 load("../Data/ind_prec_df.rda")
 load("../Data/indexList_MAIN.RData")
-load("../Data/totalStreetBuffInfo_ORIG.RData")
+load("../Data/totalStreetBuffInfo_NEW.RData")
 load("../Data/treesByPrec.RData")
 load("../Data/streetsByPrec.RData")
 Dir = '../Output_tree/origGridInfo/'
@@ -27,7 +27,7 @@ for (k in 2:13) {
 
     print(paste0("index ", i, " of 164"))
 
-    tempOverlap = gIntersection(totalStreetBuffInfo_ORIG[[k]][[i]]$buffer, nyc_small, byid = T)
+    tempOverlap = gIntersection(totalStreetBuffInfo_NEW[[k]][[i]]$buffer, nyc_small, byid = T)
     poly_order = tempOverlap@plotOrder[1:2]
 
     int_1 = gIntersection(tempOverlap[poly_order[1], ], nycSub[prec_ind_1, ])
