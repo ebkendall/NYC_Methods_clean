@@ -1,6 +1,6 @@
 load("../Data/indexList_MAIN.RData")
 
-n_matches = 150
+n_matches = 250
 
 # Step 3 -----------------------------------------------------------------------
 
@@ -11,13 +11,13 @@ p_val_df = rep(NA, 13)
 trialNum = 1
 set.seed(trialNum)
 
-load(paste0('../Output/Global/global_t_stat_', trialNum,".dat"))
+load(paste0('../Output/Global/global_t_stat_', trialNum,"_FINAL.dat"))
 
 for(k in 2:13) {
     
     load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
 
-    t_stat = max(sim_orig$DATA$t_stat_pval, na.rm = T)
+    t_stat = max(sim_orig$DATA$t_stat_new, na.rm = T)
     # w_max = which.max(na.omit(sim_orig$DATA$t_stat_pval))
     # print(paste0(k, ": ", t_stat))
 
@@ -32,13 +32,13 @@ for(k in 2:13) {
     p.unscaled <- sum(yy[xx >= t_stat]) * dx
     p.scaled <- p.unscaled / C
 
-    # p_val_not = mean(global_t_stat[[k]]$max_t_stat > t_stat)
+    # p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
     p_val_df[k] = p.scaled
     
 }
 print(p_val_df)
 save(p_val_df, file = paste0("../Output/Plots/global_p_values_",
-                             n_matches, ".rda"))
+                             n_matches, "_FINAL.rda"))
 
 # pdf(paste0("../Output/Plots/global_", n_matches, "_new_total.pdf"))
 # par(mfrow=c(2,2))

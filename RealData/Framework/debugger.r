@@ -316,3 +316,107 @@ hist(common_sub$t_stat_pval, main = "p-vals of 155 most common null streets",
      xlab = "pval")
 hist(na.omit(sim_orig$DATA$t_stat_pval), main = "p-vals of 144 observed boundaries",
      xlab = "pval")
+
+# ------------------------------------------------------------------------------
+# -------------------------- PLOTTING EVERYTHING! ------------------------------
+# ------------------------------------------------------------------------------
+
+# args <- commandArgs(TRUE)
+# buff = as.integer(args[1])
+
+library(rgeos)
+
+load('../Data/indexList_MAIN.RData')
+load("../Data/nycSub.RData")
+load("../Data/ind_prec_df.rda")
+load("../Data/totalStreetBuffInfo_ORIG.RData")
+load("../Data/dataArr_sub.rda")
+load("../Data/dataOff_sub.rda")
+load("../Output/origGridInfo/sim_orig_7.dat")
+
+plotBorderBufferArr <- function(ind164, buf) {
+
+  prec1 = ind_prec_df$prec1[ind164]
+  prec2 = ind_prec_df$prec2[ind164]
+
+  prec_ind1 = which(nycSub$Precinct == prec1)
+  prec_ind2 = which(nycSub$Precinct == prec2)
+  nyc_small = nycSub[c(prec_ind1, prec_ind2), ]
+
+  tempOverlap = gIntersection(totalStreetBuffInfo_ORIG[[buf]][[ind164]]$buffer, nyc_small,
+                              byid = T)
+
+  # Determining which buffer goes with which side
+  poly_order = tempOverlap@plotOrder[1:2]
+
+  int_1 = gIntersection(tempOverlap[poly_order[1], ], nyc_small[1, ])
+  int_2 = gIntersection(tempOverlap[poly_order[1], ], nyc_small[2, ])
+
+  if(is.null(int_1)) {
+    int_1 = 0
+  } else {
+    int_1 = int_1@polygons[[1]]@area
+  }
+
+  if(is.null(int_2)) {
+    int_2 = 0
+  } else {
+    int_2 = int_2@polygons[[1]]@area
+  }
+
+  if(int_1 < int_2) {
+    temp = poly_order[1]
+    poly_order[1] = poly_order[2]
+    poly_order[2] = temp
+  }
+
+  plot(tempOverlap, lwd = 0.5, asp = 1, main = paste0("NYC Precincts: ind ", ind164),
+       xlab = "", ylab = "")
+
+  plot(nyc_small[1,], border = "red", add = T)
+  plot(nyc_small[2,], border = "blue", add = T)
+  
+  # points(dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == prec1],
+  #        dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == prec1],
+  #        col = "black")
+  # points(dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == prec2],
+  #        dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == prec2],
+  #        col = "black")
+  
+  points(dataOff_sub$x_coord_cd[sim_orig$OFF_IND_2[[ind164]]],
+         dataOff_sub$y_coord_cd[sim_orig$OFF_IND_2[[ind164]]],
+         col = "blue")
+  points(dataOff_sub$x_coord_cd[sim_orig$OFF_IND_1[[ind164]]],
+         dataOff_sub$y_coord_cd[sim_orig$OFF_IND_1[[ind164]]],
+         col = "red")
+
+  plot(tempOverlap, border = "green", lwd = 2, add = T)
+  # plot(tempOverlap[poly_order[1], ], col = "red", add = T)
+  # plot(tempOverlap[poly_order[2], ], col = "blue", add = T)
+
+  # plot(totalStreetBuffInfo_ORIG[[buf]][[ind164]]$buffer, border = "red",  add = T)
+
+}
+
+buff = 7
+pdf(paste0("../Output/Plots/obsBordersCrimeOpp", buff, ".pdf"))
+par(mfrow=c(2,2))
+for(i in indexList_MAIN) {
+  print(i)
+  plotBorderBufferArr(i, buff)
+}
+dev.off()
+
+pdf(paste0("../Output_noWater/Plots/obsBorders_borderLength_", buff, ".pdf"))
+par(mfrow=c(2,2))
+for(i in plotOrder_borderLength$ind) {
+  print(i)
+  plotBorderBufferArr(i, buff)
+}
+dev.off()
+
+
+# 93, 43, 99, 129, 151, 138, 41, 39, 52, 86, 71, 110, 63, 7, 87, 130, 158, 
+# 82, 83, 159, 65, 47, 5, 160, 163, 161, 67, 133, 155, 112, 157, 128, 12, 17,
+# 147, 134, 156, 140, 58, 162, 164
+

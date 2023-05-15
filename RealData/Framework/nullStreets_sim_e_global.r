@@ -8,7 +8,7 @@
 
 load("../Data/indexList_MAIN.RData")
 
-n_matches = 150
+n_matches = 250
 trialNum = 1
 set.seed(trialNum)
 
@@ -35,12 +35,13 @@ for (k in 2:13) {
     wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
 
     wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                        (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                        (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                        (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
-
-    wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_pval))
+                       (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
+                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
+                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+    
+    wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
     wMatchOk = intersect(wMatchOk1, wMatchOk2)
+    # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
     
     combinedMatchingSetupFix2 = combinedMatchingSetupFix
     combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
@@ -77,7 +78,7 @@ for (k in 2:13) {
         dist_temp = sqrt(((off_temp - (tot_lengths$off1 + tot_lengths$off2))^2/v1) +
                             ((ratio_temp - rat_off)^2 / v2))
         
-        stat_temp = sim_orig$DATA$t_stat_pval[ii]
+        stat_temp = sim_orig$DATA$t_stat_new[ii]
 
         # w50 = order(dist_temp)[1:n_matches]
 
@@ -98,18 +99,18 @@ for (k in 2:13) {
         }
         # --------------------------------------------
 
-        null_dist = combinedMatchingSetupFix2$DATA$t_stat_pval[w50]
+        null_dist = combinedMatchingSetupFix2$DATA$t_stat_new[w50]
 
         global_null[[k]][ii,] = null_dist
     }
 
 }
 
-save(global_null, file = paste0("../Output/Global/global_null_", trialNum, ".dat"))
+save(global_null, file = paste0("../Output/Global/global_null_", trialNum, "_FINAL.dat"))
 
 # Step 2 -----------------------------------------------------------------------
 
-load(paste0("../Output/Global/global_null_", trialNum, ".dat"))
+load(paste0("../Output/Global/global_null_", trialNum, "_FINAL.dat"))
 global_t_stat <- vector(mode = "list", length = 13)
 
 for(k in 2:13) {
@@ -136,5 +137,5 @@ for(k in 2:13) {
 
 }
 
-save(global_t_stat, file = paste0("../Output/Global/global_t_stat_", trialNum, ".dat"))
+save(global_t_stat, file = paste0("../Output/Global/global_t_stat_", trialNum, "_FINAL.dat"))
 

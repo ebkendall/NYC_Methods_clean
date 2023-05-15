@@ -3,7 +3,7 @@ library("sf")
 library("rgeos")
 library("raster")
 
-match_count <- seq(10, 300, by = 10)
+match_count <- c(250,150)
 
 trialNum = 1
 set.seed(trialNum)
@@ -32,9 +32,10 @@ for (k in 2:13) {
                      (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
-
-  wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_pval))
+  
+  wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
   wMatchOk = intersect(wMatchOk1, wMatchOk2)
+  # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
   
   combinedMatchingSetupFix2 = combinedMatchingSetupFix
   combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
@@ -124,8 +125,8 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_", trialNum, "_new_stat_noKern.dat"))
-save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_", trialNum, "_new_stat_noKern.dat"))
+save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_", trialNum, "_new_stat_FINAL.dat"))
+save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_", trialNum, "_new_stat_FINAL.dat"))
 
 # ---------------------------------------------------------------
 # ------- Plotting everything

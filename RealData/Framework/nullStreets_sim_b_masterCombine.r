@@ -10,7 +10,7 @@ for (k in 2:13) {
 
     for(i in 2:77) {
       print(paste0(k, "_", i))
-      load(paste0("../Output_noWater/nullGridInfo/nullData", k, "_", i,".dat"))
+      load(paste0("../Output/nullGridInfo/nullData", k, "_", i,".dat"))
       nullStr_point_data$DATA = nullStr_point_data$DATA[nullStr_point_data$DATA$precinct != -1, ]
       nullStr_point_data$ARR_IND_1 = nullStr_point_data$ARR_IND_1[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_1, is.null))]
       nullStr_point_data$ARR_IND_2 = nullStr_point_data$ARR_IND_2[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_2, is.null))]

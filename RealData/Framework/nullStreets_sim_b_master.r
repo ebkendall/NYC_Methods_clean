@@ -5,24 +5,6 @@ load('../Data/dataOff_sub.rda') # dataOff_sub
 load('../Data/nycSub.RData')
 load('../Data/monthKey.rda')
 
-# monthKey = as.vector(unique(dataArr_sub$yearmonth))
-# for(i in 1:length(monthKey)) {
-#   if(nchar(monthKey[i]) > 6) {
-#     temp = paste0(substr(monthKey[i],1,4), "z", substr(monthKey[i],6,7))
-#     monthKey[i] = temp
-#   }
-# }
-# monthKey = sort(monthKey)
-# for(i in 1:length(monthKey)) {
-#   if(nchar(monthKey[i]) > 6) {
-#     temp = paste0(substr(monthKey[i],1,4), "m", substr(monthKey[i],6,7))
-#     monthKey[i] = temp
-#   }
-# }
-# save(monthKey, file = "../Data/monthKey.rda")
-# dataArr_sub$main_ind = 1:nrow(dataArr_sub); save(dataArr_sub, file = '../Data/dataArr_sub.rda')
-# dataOff_sub$main_ind = 1:nrow(dataOff_sub); save(dataOff_sub, file = '../Data/dataOff_sub.rda')
-
 # Iterate through each buffer width
 for (index in 2:13) {
   
@@ -48,7 +30,7 @@ for (index in 2:13) {
                               OFF_IND_2 = vector(mode = 'list', length = l))
     rowNum = 1
 
-    load(paste0("../Data/OutputStrInfo_noWater/strInfo_", index, "_", k, ".dat")) # contains the buffer object
+    load(paste0("../Data/OutputStrInfo_realData/strInfo_", index, "_", k, ".dat")) # contains the buffer object
 
     print(paste0("Total length: ", length(streetLengthInfo_null)))
     for(i in 1:length(streetLengthInfo_null)) {
@@ -71,6 +53,11 @@ for (index in 2:13) {
                                      poly1@Polygons[[1]]@coords[,1], poly1@Polygons[[1]]@coords[,2])
             off_2 = point.in.polygon(off_sub$x_coord_cd, off_sub$y_coord_cd,
                                      poly2@Polygons[[1]]@coords[,1], poly2@Polygons[[1]]@coords[,2])
+            
+            n_arr_1 = sum(arr_1 > 0)
+            n_arr_2 = sum(arr_2 > 0)
+            n_off_1 = sum(off_1 > 0)
+            n_off_2 = sum(off_2 > 0)
             
             arr_1_ind = arr_sub$main_ind[which(arr_1 > 0)]
             arr_2_ind = arr_sub$main_ind[which(arr_2 > 0)]
