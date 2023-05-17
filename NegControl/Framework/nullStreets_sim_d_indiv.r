@@ -3,7 +3,7 @@ library("sf")
 library("rgeos")
 library("raster")
 
-match_count <- seq(10, 300, by = 10)
+match_count <- c(250,150)
 
 trialNum = 1
 set.seed(trialNum)
@@ -32,9 +32,10 @@ for (k in 2:13) {
                      (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
-
+  
   wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
   wMatchOk = intersect(wMatchOk1, wMatchOk2)
+  # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
   
   combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wMatchOk,]
   
@@ -105,24 +106,24 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output_tree/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
-save(perc_pval_match, file = paste0("../Output_tree/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
+save(p_val_df, file = paste0("../Output_tree/p_vals_match_rel/p_val_df_", trialNum, "_FINAL.dat"))
+save(perc_pval_match, file = paste0("../Output_tree/p_vals_match_rel/perc_pval_match_", trialNum, "_FINAL.dat"))
 
 # ---------------------------------------------------------------
 # ------- Plotting everything
 # ---------------------------------------------------------------
-load('../Output_tree/p_vals_match_rel/perc_pval_match_1.dat')
-pdf('../Output_tree/Plots/pVal_num_match.pdf')
-par(mfrow=c(3,1))
-for (i in 2:13) {
-    pval = perc_pval_match[[i]]
-    # print(t(temp))
-    plot(pval$num_match, pval$perc_pval_less_05, main = paste0("pVal for B", i*100),
-         xaxt="none", xlab = "Perc. < 0.05 is ", ylim = c(0,0.15))
-    axis(1, seq(10,300,10), las=2)
-    abline(h=0.05, col = "red")
-}
-dev.off()
+# load('../Output_tree/p_vals_match_rel/perc_pval_match_1_filt.dat')
+# pdf('../Output_tree/Plots/pVal_num_match_FINAL_filt.pdf')
+# par(mfrow=c(3,1))
+# for (i in 2:13) {
+#     pval = perc_pval_match[[i]]
+#     # print(t(temp))
+#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0("pVal for B", i*100),
+#          xaxt="none", xlab = "Perc. < 0.05 is ", ylim = c(0,0.15))
+#     axis(1, seq(10,300,10), las=2)
+#     abline(h=0.05, col = "red")
+# }
+# dev.off()
 
 # load("../Output/sim_orig/p_vals_match_rel/perc_pval_match_1.dat")
 # final_plot = perc_pval_match

@@ -23,42 +23,14 @@ for (k in 2:13) {
     prec_ind_1 = which(nycSub$Precinct == ind_prec_df$prec1[i])
     prec_ind_2 = which(nycSub$Precinct == ind_prec_df$prec2[i])
 
-    nyc_small = nycSub[c(prec_ind_1, prec_ind_2), ]
+    poly1 = totalStreetBuffInfo_NEW[[k]][[i]]$poly1
+    poly2 = totalStreetBuffInfo_NEW[[k]][[i]]$poly2
 
-    print(paste0("index ", i, " of 164"))
+    poly_ind1 = totalStreetBuffInfo_NEW[[k]][[i]]$poly_ind1
+    poly_ind2 = totalStreetBuffInfo_NEW[[k]][[i]]$poly_ind2
 
-    tempOverlap = gIntersection(totalStreetBuffInfo_NEW[[k]][[i]]$buffer, nyc_small, byid = T)
-    poly_order = tempOverlap@plotOrder[1:2]
-
-    int_1 = gIntersection(tempOverlap[poly_order[1], ], nycSub[prec_ind_1, ])
-    int_2 = gIntersection(tempOverlap[poly_order[1], ], nycSub[prec_ind_2, ])
-
-    if(is.null(int_1)) {
-      int_1 = 0
-    } else {
-      int_1 = int_1@polygons[[1]]@area
-    }
-
-    if(is.null(int_2)) {
-      int_2 = 0
-    } else {
-      int_2 = int_2@polygons[[1]]@area
-    }
-
-    if(int_1 < int_2) {
-      temp = poly_order[1]
-      poly_order[1] = poly_order[2]
-      poly_order[2] = temp
-    }
-
-    poly1 = tempOverlap[poly_order[1], ]
-    poly2 = tempOverlap[poly_order[2], ]
-
-    poly_ind1 = poly1@polygons[[1]]@plotOrder[1]
-    poly_ind2 = poly2@polygons[[1]]@plotOrder[1]
-
-    area1 = poly1@polygons[[1]]@Polygons[[poly_ind1]]@area
-    area2 = poly2@polygons[[1]]@Polygons[[poly_ind2]]@area
+    area1 = totalStreetBuffInfo_NEW[[k]][[i]]$area1
+    area2 = totalStreetBuffInfo_NEW[[k]][[i]]$area2
 
     # Collecting Tree counts for Precinct 1 across both buffers
     p1 = point.in.polygon(treesByPrec[[prec_ind_1]][,1], treesByPrec[[prec_ind_1]][,2],
@@ -71,10 +43,8 @@ for (k in 2:13) {
     t1 = count1 = length(which(p1 > 0)) 
     t2 = count2 = length(which(p2 > 0))
     
-    s1_objects = gIntersection(poly1, streetsByPrec[[prec_ind_1]])
-    s1 = gLength(s1_objects)
-    s2_objects = gIntersection(poly2, streetsByPrec[[prec_ind_2]])
-    s2 = gLength(s2_objects)
+    s1 = totalStreetBuffInfo_NEW[[k]][[i]]$streetLength1
+    s2 = totalStreetBuffInfo_NEW[[k]][[i]]$streetLength2
     
     vals = c(t1,s1,t2,s2)
     if(sum(vals == 0) > 0) {

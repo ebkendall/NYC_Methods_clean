@@ -1,10 +1,10 @@
-load("../Output_tree/p_vals_match_rel/p_val_df_1.dat")
+load("../Output_tree/p_vals_match_rel/p_val_df_1_FINAL.dat")
 final_hist = p_val_df
 
-pdf("../Output_tree/Plots/pValHistTotal_street_new.pdf")
+pdf("../Output_tree/Plots/pValHistTotal_street_FINAL__FINAL_250.pdf")
 par(mfrow=c(2,2))
 for (i in 2:13) {
-  pval = final_hist[[i]][5,]
+  pval = final_hist[[i]][1,]
   hist(pval, main = paste0("pVal for B", i*100),
         xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
         xlim=c(0,1))

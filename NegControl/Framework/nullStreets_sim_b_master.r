@@ -86,10 +86,8 @@ for (index in 2:13) {
             }
             
             nullStr_point_data$DATA[rowNum,] = c(k, i, j, t1, t2,
-                                        streetLengthInfo_null[[i]][[j]]$streetLength1,
-                                        streetLengthInfo_null[[i]][[j]]$streetLength2,
-                                        area1, area2, tStat_a, pval,
-                                        streetLengthInfo_null[[i]][[j]]$totalLength, T, tStat)
+                                        s1, s2, area1, area2, tStat_a, pval,
+                                        s1 + s2, T, tStat)
             
             nullStr_point_data$GRID_IND_1[[rowNum]] = which(p1 > 0)
             nullStr_point_data$GRID_IND_2[[rowNum]] = which(p2 > 0)

@@ -5,9 +5,7 @@ load("../Data/streetsByPrec.RData")             # streetsByPrec
 load("../Data/nycSub.RData")
 
 index <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-index = 2
 load(paste0("/blue/jantonelli/emmett.kendall/JoeyProject/Crime10-31-2021/NullStreetInfo/streets", index, ".dat"))  # longStrBroke
-load('newInfo/streets2.dat')
 # Buffer Splitting function
 bufferSplit_null <- function(myLine, buf) {
   
