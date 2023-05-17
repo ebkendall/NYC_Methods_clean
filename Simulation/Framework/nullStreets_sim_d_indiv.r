@@ -232,7 +232,23 @@ for (k in 2:13) {
           dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2))^2/v1) +
                              ((ratio_temp - combinedMatchingSetupFix2$DATA$ratioArea)^2 / v2))
 
-          w50 = order(dist_temp)[1:j]
+        #   w50 = order(dist_temp)[1:j]
+        # Choose one mother street --------------------
+            match_counter = jj = 1
+            streetInd = vector(mode = "list", length = 77)
+            for (w in 1:77) {streetInd[[w]] = c(-1) }
+            w50 = rep(NA, j)
+            close_ind = order(dist_temp)
+            while(match_counter <= j) {
+                temp = combinedMatchingSetupFix2$DATA[close_ind[jj], ]
+                if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
+                    w50[match_counter] = close_ind[jj]
+                    match_counter = match_counter + 1
+                    streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
+                }
+                jj = jj + 1
+            }
+        # --------------------------------------------
 
           tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
           null_dist = tStats_temp$tStat_area
