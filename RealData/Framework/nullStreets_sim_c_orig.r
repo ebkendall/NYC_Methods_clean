@@ -14,8 +14,9 @@ for (k in 2:13) {
 
   sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
                                      "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
-                                     "t_stat_pval" = rep(NA, 164), "coeff" = rep(NA, 164), "se" = rep(NA, 164),
-                                     "t_stat_new" = rep(NA, 164), "naive_pval" = rep(NA, 164)),
+                                     "n_arr_1" = rep(NA, 164), "n_arr_2" = rep(NA, 164),
+                                     "n_off_1" = rep(NA, 164), "n_off_2" = rep(NA, 164),
+                                     "naive_pval" = rep(NA, 164)),
                    ARR_IND_1 = vector(mode = 'list', length = 164),
                    ARR_IND_2 = vector(mode = 'list', length = 164),
                    OFF_IND_1 = vector(mode = 'list', length = 164),
