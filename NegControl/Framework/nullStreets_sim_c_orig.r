@@ -10,16 +10,14 @@ Dir = '../Output_tree/origGridInfo/'
 print(Dir)
 
 for (k in 2:13) {
-
-  sim_orig <- list(DATA = data.frame( "count1" = rep(-1,164), "count2" = rep(-1,164),
-                                      "streets1" = rep(-1,164), "streets2" = rep(-1,164),
-                                      "area1" = rep(-1,164), "area2" = rep(-1,164), "tStat_area" = rep(NA,164), "naivePVal" = rep(-1,164),
-                                      "totLength" = rep(-1,164), "tStat" = rep(NA,164)),
-                              GRID_IND_1 = vector(mode = 'list', length = 164),
-                              GRID_IND_2 = vector(mode = 'list', length = 164))
+  print(k)
+  sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
+                                     "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
+                                     "count1" = rep(NA,164), "count2" = rep(NA,164),
+                                     "naive_pval" = rep(NA, 164)))
     
   for (i in indexList_MAIN) {
-    
+    print(i)
     prec_ind_1 = which(nycSub$Precinct == ind_prec_df$prec1[i])
     prec_ind_2 = which(nycSub$Precinct == ind_prec_df$prec2[i])
 
@@ -40,38 +38,12 @@ for (k in 2:13) {
                           poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
                           poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
     
-    t1 = count1 = length(which(p1 > 0)) 
-    t2 = count2 = length(which(p2 > 0))
+    count1 = sum(p1 > 0)
+    count2 = sum(p2 > 0)
     
     s1 = totalStreetBuffInfo_NEW[[k]][[i]]$streetLength1
     s2 = totalStreetBuffInfo_NEW[[k]][[i]]$streetLength2
     
-    vals = c(t1,s1,t2,s2)
-    if(sum(vals == 0) > 0) {
-      if(vals[2] == 0 | vals[4] == 0) {
-        vals = vals+1
-      } else {
-        vals[1] = vals[1] + 1
-        vals[3] = vals[3] + 1
-      }
-    } 
-
-    tStat = tStat_a = NA
-
-    # Want division to be large / small (streets)
-    if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
-      tStat = (vals[1]/vals[2]) / (vals[3]/vals[4])
-    } else {
-      tStat = (vals[3]/vals[4]) / (vals[1]/vals[2])
-    }
-
-    # Want division to be large / small (area)
-    if ((vals[1]/area1) > (vals[3]/area2)) {
-      tStat_a = (vals[1]/area1) / (vals[3]/area2)
-    } else {
-      tStat_a = (vals[3]/area2) / (vals[1]/area1)
-    }
-
     n = count1 + count2
     p = 0.5
     pval = NA
@@ -82,10 +54,8 @@ for (k in 2:13) {
       pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
     }
 
-    sim_orig$DATA[i,] = c(count1, count2, s1, s2, area1, area2, tStat_a, pval, 
-                          s1 + s2, tStat)
-    sim_orig$GRID_IND_1[[i]] = which(p1 > 0)
-    sim_orig$GRID_IND_2[[i]] = which(p2 > 0)
+    sim_orig$DATA[i,] = c(area1, area2, s1, s2, count1, count2, pval)
+    if(count1 == 0 & count2 == 0) print(paste0("No trees: ", k, ", ", i))
   }
 
   save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))
