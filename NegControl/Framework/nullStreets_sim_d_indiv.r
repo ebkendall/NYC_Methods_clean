@@ -3,13 +3,11 @@ library("sf")
 library("rgeos")
 library("raster")
 
-match_count <- c(250,150)
+match_count <- 400
 
-trialNum = 1
-set.seed(trialNum)
+set.seed(100)
 
 load("../Data/indexList_MAIN.RData")
-
 
 perc_pval_match = vector(mode = "list", length = 13)
 
@@ -28,20 +26,22 @@ for (k in 2:13) {
   wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
   wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
 
-  wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+  wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
                      (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
   
-  wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
-  wMatchOk = intersect(wMatchOk1, wMatchOk2)
-  # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
+  # wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
+  # wMatchOk = intersect(wMatchOk1, wMatchOk2)
   
   combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wMatchOk,]
   
   v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
   v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
+  t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1 - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
+  t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1 - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+  
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
                                     "perc_pval_less_05" = rep(NA, length(match_count)))
@@ -53,11 +53,11 @@ for (k in 2:13) {
 
     for (ii in indexList_MAIN) {
       ## find matches
-      area_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
+      streets_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
       ratio_temp = max(sim_orig$DATA$streets1[ii] / sim_orig$DATA$streets2[ii],
                        sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
       
-      dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
+      dist_temp = sqrt(((streets_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
                          ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
       
       # w50 = order(dist_temp)[1:j]
@@ -79,24 +79,21 @@ for (k in 2:13) {
       }
       # --------------------------------------------
       
+      null_dist = t_stat_streets[w50]
 
-      # tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
-      null_dist = combinedMatchingSetupFix2$tStat[w50]
-
-      # orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
-      stat_temp = sim_orig$DATA$tStat[ii]
-
+      stat_temp = t_stat_streets_orig[ii]
+      
       test = density(null_dist, bw = "ucv")
       xx = test$x
       yy = test$y
       dx <- xx[2L] - xx[1L]
       C <- sum(yy) * dx
       
-      p.unscaled <- sum(yy[xx >= stat_temp]) * dx
+      p.unscaled <- sum(yy[xx > stat_temp]) * dx
       p.scaled <- p.unscaled / C
       
       pval[ii] = p.scaled
-      # pval[ii] = mean(null_dist >= stat_temp)
+      # pval[ii] = mean(null_dist > stat_temp)
     }
 
     perc_pval = mean(pval < 0.05, na.rm=TRUE)
@@ -106,8 +103,8 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output_tree/p_vals_match_rel/p_val_df_", trialNum, "_FINAL.dat"))
-save(perc_pval_match, file = paste0("../Output_tree/p_vals_match_rel/perc_pval_match_", trialNum, "_FINAL.dat"))
+save(p_val_df, file = paste0("../Output_tree/p_vals_match_rel/p_val_df_FINAL.dat"))
+save(perc_pval_match, file = paste0("../Output_tree/p_vals_match_rel/perc_pval_match_FINAL.dat"))
 
 # ---------------------------------------------------------------
 # ------- Plotting everything
