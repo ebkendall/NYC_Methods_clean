@@ -1,16 +1,9 @@
-library("sp")
-library("sf")
-library("rgeos")
-library("raster")
-
-match_count <- 400
-
+library(sp); library(sf); library(rgeos); library(raster)
 set.seed(100)
 
+match_count <- 560
 load("../Data/indexList_MAIN.RData")
-
 perc_pval_match = vector(mode = "list", length = 13)
-
 p_val_df <- vector(mode = "list", length = 13)
 
 for (k in 2:13) {
@@ -20,27 +13,29 @@ for (k in 2:13) {
   load(paste0('../Output_tree/nullGridInfo/combinedMatchingSetup', k, ".dat"))
   load(paste0('../Output_tree/origGridInfo/sim_orig_', k, '.dat'))
 
-  wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-  wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-
-  wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-  wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-
-  wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                     (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+  ## Now remove data points where these ratios are much different
+  area_ratio = c(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+  area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+  wMax_a = max(area_ratio)
+  wMin_a = min(area_ratio)
   
-  # wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
-  # wMatchOk = intersect(wMatchOk1, wMatchOk2)
+  street_ratio = c(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+  street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+  wMax_s = max(street_ratio)
+  wMin_s = min(street_ratio)
   
-  combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wMatchOk,]
+  wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                       combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                       combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                       combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
+  
+  combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
   
   v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
   v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
-  t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1 - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
-  t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1 - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+  t_stat_streets = abs(combinedMatchingSetupFix2$count1 - combinedMatchingSetupFix2$count2)
+  t_stat_streets_orig = abs(sim_orig$DATA$count1 - sim_orig$DATA$count2)
   
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
@@ -56,44 +51,15 @@ for (k in 2:13) {
       streets_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
       ratio_temp = max(sim_orig$DATA$streets1[ii] / sim_orig$DATA$streets2[ii],
                        sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
+      stat_temp = t_stat_streets_orig[ii]
       
       dist_temp = sqrt(((streets_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
                          ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
       
-      # w50 = order(dist_temp)[1:j]
-      
-      # Choose one mother street --------------------
-      match_counter = jj = 1
-      streetInd = vector(mode = "list", length = 77)
-      for (w in 1:77) {streetInd[[w]] = c(-1) }
-      w50 = rep(NA, j)
-      close_ind = order(dist_temp)
-      while(match_counter <= j) {
-        temp = combinedMatchingSetupFix2[close_ind[jj], ]
-        if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
-          w50[match_counter] = close_ind[jj]
-          match_counter = match_counter + 1
-          streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-        }
-        jj = jj + 1
-      }
-      # --------------------------------------------
+      w50 = order(dist_temp)[1:j]
       
       null_dist = t_stat_streets[w50]
-
-      stat_temp = t_stat_streets_orig[ii]
-      
-      test = density(null_dist, bw = "ucv")
-      xx = test$x
-      yy = test$y
-      dx <- xx[2L] - xx[1L]
-      C <- sum(yy) * dx
-      
-      p.unscaled <- sum(yy[xx > stat_temp]) * dx
-      p.scaled <- p.unscaled / C
-      
-      pval[ii] = p.scaled
-      # pval[ii] = mean(null_dist > stat_temp)
+      pval[ii] = mean(null_dist > stat_temp)
     }
 
     perc_pval = mean(pval < 0.05, na.rm=TRUE)
