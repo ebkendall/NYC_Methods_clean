@@ -1,10 +1,7 @@
-library(sp); library(sf); 
-library(rgeos); library(raster)
+set.seed(10)
 
 match_count <- seq(20, 1200, by = 20)
 load("../Data/indexList_MAIN.RData")
-
-set.seed(10)
 
 for (k in 2:13) {
 
@@ -44,7 +41,7 @@ for (k in 2:13) {
     
     for(j in match_count) {
       print(j)
-      pval = rep(NA, nrow(sim_orig))
+      pval = rep(NA, nrow(sim_orig$DATA))
 
       for (ii in indexList_MAIN) {
         ## find matches

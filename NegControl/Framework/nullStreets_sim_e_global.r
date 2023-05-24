@@ -8,9 +8,8 @@
 
 load("../Data/indexList_MAIN.RData")
 
-n_matches = 150
-trialNum = 1
-set.seed(trialNum)
+n_matches = 560
+set.seed(2023)
 
 `%notin%` <- Negate(`%in%`)
 
@@ -28,67 +27,48 @@ for (k in 2:13) {
     load(paste0('../Output_tree/nullGridInfo/combinedMatchingSetup', k, ".dat"))
     load(paste0('../Output_tree/origGridInfo/sim_orig_', k, '.dat'))
 
-    wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-    wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-
-    wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-    wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-
-    wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                       (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+    ## Now remove data points where these ratios are much different
+    area_ratio = c(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+    wMax_a = max(area_ratio)
+    wMin_a = min(area_ratio)
     
-    wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
-    wMatchOk = intersect(wMatchOk1, wMatchOk2)
-    # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$tStat))
+    street_ratio = c(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+    wMax_s = max(street_ratio)
+    wMin_s = min(street_ratio)
     
-    combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wMatchOk,]
+    wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                        combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                        combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                        combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
+    
+    combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
     
     # =====================================================================
     
     v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
+    t_stat_streets = abs(combinedMatchingSetupFix2$count1 - combinedMatchingSetupFix2$count2)
     for(ii in indexList_MAIN) {
-        area_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
+        ## find matches
+        streets_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
         ratio_temp = max(sim_orig$DATA$streets1[ii] / sim_orig$DATA$streets2[ii],
-                       sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
+                        sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
+        
+        dist_temp = sqrt(((streets_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
+                            ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
       
-        dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
-                         ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
+        w50 = order(dist_temp)[1:n_matches]
 
-        # w50 = order(dist_temp)[1:n_matches]
-
-        # Choose one mother street --------------------
-        match_counter = jj = 1
-        streetInd = vector(mode = "list", length = 77)
-        for (w in 1:77) {streetInd[[w]] = c(-1) }
-        w50 = rep(NA, n_matches)
-        close_ind = order(dist_temp)
-        while(match_counter <= n_matches) {
-          temp = combinedMatchingSetupFix2[close_ind[jj], ]
-          if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
-            w50[match_counter] = close_ind[jj]
-            match_counter = match_counter + 1
-            streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-          }
-          jj = jj + 1
-        }
-        # --------------------------------------------
-
-        null_dist = combinedMatchingSetupFix2$t_stat_pval[w50]
-
+        null_dist = t_stat_streets[w50]
         global_null[[k]][ii,] = null_dist
     }
 
 }
 
-save(global_null, file = paste0("../Output_tree/Global/global_null_", trialNum, "_FINAL.dat"))
-
 # Step 2 -----------------------------------------------------------------------
-
-load(paste0("../Output_tree/Global/global_null_", trialNum, "_FINAL.dat"))
 global_t_stat <- vector(mode = "list", length = 13)
 
 for(k in 2:13) {
@@ -98,7 +78,7 @@ for(k in 2:13) {
                                     "max_loc" = rep(NA, n_matches))
     
     for (rep in 1:n_matches) {
-    # This is the repetition to get the null distribution
+        # This is the repetition to get the null distribution
         temp_loc = temp_max = c()
         myInd = 1
         for(ii in indexList_MAIN) {
@@ -108,12 +88,11 @@ for(k in 2:13) {
             temp_max[myInd] = global_null[[k]][ii, rand_ind]
             myInd = myInd + 1
         }
-        print(paste0(max(temp_max, na.rm = T), " ", temp_loc[which.max(temp_max)]))
         global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
         global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
     }
 
 }
 
-save(global_t_stat, file = paste0("../Output_tree/Global/global_t_stat_", trialNum, "_FINAL.dat"))
+save(global_t_stat, file = "../Output_tree/combination/global_t_stat_FINAL.dat")
 

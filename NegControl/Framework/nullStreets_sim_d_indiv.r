@@ -1,8 +1,8 @@
-library(sp); library(sf); library(rgeos); library(raster)
 set.seed(100)
 
 match_count <- 560
 load("../Data/indexList_MAIN.RData")
+
 perc_pval_match = vector(mode = "list", length = 13)
 p_val_df <- vector(mode = "list", length = 13)
 
@@ -72,67 +72,3 @@ for (k in 2:13) {
 save(p_val_df, file = paste0("../Output_tree/p_vals_match_rel/p_val_df_FINAL.dat"))
 save(perc_pval_match, file = paste0("../Output_tree/p_vals_match_rel/perc_pval_match_FINAL.dat"))
 
-# ---------------------------------------------------------------
-# ------- Plotting everything
-# ---------------------------------------------------------------
-# load('../Output_tree/p_vals_match_rel/perc_pval_match_1_filt.dat')
-# pdf('../Output_tree/Plots/pVal_num_match_FINAL_filt.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#     pval = perc_pval_match[[i]]
-#     # print(t(temp))
-#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0("pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ", ylim = c(0,0.15))
-#     axis(1, seq(10,300,10), las=2)
-#     abline(h=0.05, col = "red")
-# }
-# dev.off()
-
-# load("../Output/sim_orig/p_vals_match_rel/perc_pval_match_1.dat")
-# final_plot = perc_pval_match
-# plot_mat = perc_pval_match
-
-# for (i in 2:100) {
-#     load(paste0("../Output/sim_orig/p_vals_match_rel/perc_pval_match_", i, ".dat"))
-#     for(j in 1:3) {
-#         for(k in 2:13) {
-#             final_plot[[j]][[k]] = rbind(final_plot[[j]][[k]], perc_pval_match[[j]][[k]])
-#             plot_mat[[j]][[k]] = cbind(plot_mat[[j]][[k]], perc_pval_match[[j]][[k]]$perc_pval_less_05)
-#         }
-#     }
-# }
-
-# folder_type = c("HotSpot", "Uniform", "Random")
-
-# pdf('../Output/Plots/pVal_num_match.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     print(paste0(k, " ", i))
-#     pval = final_plot[[k]][[i]]
-#     temp = cbind(plot_mat[[k]][[i]][,1], rowMeans(plot_mat[[k]][[i]][,-1]))
-#     # print(t(temp))
-#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     abline(h=0.05, col = "red")
-#     lines(temp[,1], temp[,2], col = "purple", lwd = 2)
-#   }
-# }
-# dev.off()
-
-# pdf('../Output/Plots/pVal_num_match2.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     pval = plot_mat[[k]][[i]]
-#     plot(pval[,1], pval[,2], main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     for(w in 1:100) {
-#         abline(lm(pval[,w+1] ~ pval[,1]), col = w)
-#         # lines(pval[,1], pval[,w+1], col = w)
-#     }
-#   }
-# }
-# dev.off()
