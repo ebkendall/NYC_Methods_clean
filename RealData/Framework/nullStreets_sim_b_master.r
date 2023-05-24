@@ -12,7 +12,7 @@ for (index in 2:13) {
     set.seed(k)
 
     prec_num = nycSub$Precinct[k]
-    arr_sub = dataArr_sub[dataArr_sub$precinct == prec_num, ]
+    arr_sub = dataArr_sub[dataArr_sub$arrest_precinct == prec_num, ]
     off_sub = dataOff_sub[dataOff_sub$precinct == prec_num, ]
 
     print(paste0("Buffer: ", index, ", Precinct: ", k))

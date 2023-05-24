@@ -1,15 +1,8 @@
-library("sp")
-library("sf")
-library("rgeos")
-library("raster")
+set.seed(2023)
 
-match_count <- c(250,150)
-
-trialNum = 1
-set.seed(trialNum)
+match_count <- 560
 
 load("../Data/indexList_MAIN.RData")
-
 
 perc_pval_match = vector(mode = "list", length = 13)
 
@@ -28,13 +21,13 @@ for (k in 2:13) {
   wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
   wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
 
-  wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
+  wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
                      (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
                      (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
   
-  wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
-  wMatchOk = intersect(wMatchOk1, wMatchOk2)
+  # wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
+  # wMatchOk = intersect(wMatchOk1, wMatchOk2)
   # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
   
   combinedMatchingSetupFix2 = combinedMatchingSetupFix
@@ -58,8 +51,8 @@ for (k in 2:13) {
   # Need to compensate for 0s
   off_num = data.frame("off1" = sapply(sim_orig$OFF_IND_1, length),
                        "off2" = sapply(sim_orig$OFF_IND_2, length))
-  off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] = 
-    off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] + 1
+  # off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] = 
+  #   off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] + 1
   
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
@@ -125,8 +118,8 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_", trialNum, "_new_stat_FINAL.dat"))
-save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_", trialNum, "_new_stat_FINAL.dat"))
+save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat"))
+save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_new_stat_FINAL.dat"))
 
 # ---------------------------------------------------------------
 # ------- Plotting everything
