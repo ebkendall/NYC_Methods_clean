@@ -15,6 +15,7 @@ for (k in 2:13) {
                                      "streets1" = rep(NA, 164), "streets2" = rep(NA, 164)),
                    GRID_IND_1 = vector(mode = 'list', length = 164),
                    GRID_IND_2 = vector(mode = 'list', length = 164))
+  print(paste0("index ", k, " of 13"))
     
   for (i in indexList_MAIN) {
 
@@ -36,8 +37,6 @@ for (k in 2:13) {
 
     gridVals_ind_master = c(gridWithin_prec[[prec_ind_1]]$index,
                             gridWithin_prec[[prec_ind_2]]$index)
-
-    print(paste0("index ", i, " of 164"))
 
     tempOverlap = gIntersection(totalStreetBuffInfo_ORIG[[k]][[i]]$buffer, nyc_small, byid = T)
     poly_order = tempOverlap@plotOrder[1:2]

@@ -155,7 +155,7 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
     return(t_stat_df)
 }
 
-match_count <- seq(10, 300, by = 10)
+match_count <- seq(20, 1200, by = 20)
 
 trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(trialNum)
