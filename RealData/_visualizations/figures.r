@@ -52,36 +52,24 @@ for(k in 2:13) {
     t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
     
     t_stat = max(t_stat_orig, na.rm = T)
-  # w_max = which.max(na.omit(sim_orig$DATA$t_stat_pval))
-  # print(paste0(k, ": ", t_stat))
   
-  # whichMaxInfo[[k]] = rbind(whichMaxInfo[[k]], c(w_max, t_stat))
-  
-  # test = density(global_t_stat[[k]]$max_t_stat, bw = "ucv")
-  # xx = test$x
-  # yy = test$y
-  # dx <- xx[2L] - xx[1L]
-  # C <- sum(yy) * dx
-  # 
-  # p.unscaled <- sum(yy[xx >= t_stat]) * dx
-  # p.scaled <- p.unscaled / C
-  # p_val_df[k] = p.scaled
-  
-  p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
+    p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
   
 }
 print(p_val_df)
 globalPvals_new_2 = data.frame("buff" = 3:13,
                                "p" = p_val_df[3:13])
-ggplot(globalPvals_new_2, aes(y=p, x=buff)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  ggtitle("P-Values for Global Test Statistics") +
-  xlab("Buffer Width (100x in ft)") + 
-  ylab("P-Values") +
-  geom_hline(yintercept=0.05, linetype="dashed", 
-             color = "red", size = 1.5) +
-  theme(text = element_text(size=22)) +
-  scale_x_continuous(breaks= 2:13)
+realData_global_total = ggplot(globalPvals_new_2, aes(y=p, x=buff)) + 
+                      geom_bar(position="dodge", stat="identity") + 
+                      ggtitle("P-Values for global test statistics") +
+                      xlab("Buffer Width (100x in ft)") + 
+                      ylab("P-Values") +
+                      geom_hline(yintercept=0.05, linetype="dashed", 
+                                 color = "red", size = 0.5) +
+                      theme(text = element_text(size=8)) +
+                      scale_x_continuous(breaks= 2:13)
+
+ggsave(filename = "Plots/realData_global_total.png", plot = realData_global_total, width = 1000, height = 800, units = "px")
 
 globalEmpDist = data.frame("five" = global_t_stat[[5]]$max_t_stat,
                            "nine" = global_t_stat[[9]]$max_t_stat,
@@ -89,37 +77,41 @@ globalEmpDist = data.frame("five" = global_t_stat[[5]]$max_t_stat,
 globalObsVal = data.frame("five" = 1, "nine" = 1, "thirteen" = 1)
 ind = 1
 for(k in c(5,9,13)) {
-  load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
+    
+    t_stat = max(t_stat_orig, na.rm = T)
   
-  globalObsVal[1,ind] = max(sim_orig$DATA$t_stat_new, na.rm = T)
-  ind=ind+1
+    globalObsVal[1,ind] = t_stat
+    ind=ind+1
 }
 
 p1 = ggplot(globalEmpDist, aes(x=five)) + 
   geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
   geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$five[1], color="red"), size=1) + 
-  ggtitle("Distribution of Global Test Statistic (Buffer 500 ft)") +
+  ggtitle("Distribution of global test statistic (500 ft)") +
   xlab("Test Statistic") + 
   ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=22))
+  theme(legend.position="none", text = element_text(size=6))
 
 p2 = ggplot(globalEmpDist, aes(x=nine)) + 
   geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
   geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$nine[1], color="red"), size=1) + 
-  ggtitle("Distribution of Global Test Statistic (Buffer 900 ft)") +
+  ggtitle("Distribution of global test statistic (900 ft)") +
   xlab("Test Statistic") + 
   ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=22))
+  theme(legend.position="none", text = element_text(size=6))
 
 p3 = ggplot(globalEmpDist, aes(x=thirteen)) + 
   geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
   geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$thirteen[1], color="red"), size=1) + 
-  ggtitle("Distribution of Global Test Statistic (Buffer 1300 ft)") +
+  ggtitle("Distribution of global test statistic (1300 ft)") +
   xlab("Test Statistic") + 
   ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=22))
+  theme(legend.position="none", text = element_text(size=6))
 
-grid.arrange(p1, p2, p3, nrow = 3)
+realData_global_sep = grid.arrange(p1, p2, p3, nrow = 3)
+ggsave(filename = "Plots/realData_global_sep.png", plot = realData_global_sep, width = 1000, height = 800, units = "px")
 
 # Figure of Individual results -----------------------------------------------------
 perc_rejections_new = data.frame("orig" = c(1:13), "adjusted" = c(1:13))
