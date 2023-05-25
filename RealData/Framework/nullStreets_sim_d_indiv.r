@@ -1,11 +1,9 @@
 set.seed(2023)
 
 match_count <- 560
-
 load("../Data/indexList_MAIN.RData")
 
 perc_pval_match = vector(mode = "list", length = 13)
-
 p_val_df <- vector(mode = "list", length = 13)
 
 for (k in 2:13) {
@@ -15,44 +13,33 @@ for (k in 2:13) {
   load(paste0('../Output/nullGridInfo/combinedMatchingSetup', k, ".dat"))
   load(paste0('../Output/origGridInfo/sim_orig_', k, '.dat'))
 
-  wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-  wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-
-  wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-  wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-
-  wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                     (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                     (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+  ## Now remove data points where these ratios are much different
+  area_ratio = c(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+  area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+  wMax_a = max(area_ratio)
+  wMin_a = min(area_ratio)
   
-  # wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
-  # wMatchOk = intersect(wMatchOk1, wMatchOk2)
-  # wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
+  street_ratio = c(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+  street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+  wMax_s = max(street_ratio)
+  wMin_s = min(street_ratio)
   
-  combinedMatchingSetupFix2 = combinedMatchingSetupFix
-  combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
-  combinedMatchingSetupFix2$ARR_IND_1 = combinedMatchingSetupFix2$ARR_IND_1[wMatchOk]
-  combinedMatchingSetupFix2$ARR_IND_2 = combinedMatchingSetupFix2$ARR_IND_2[wMatchOk]
-  combinedMatchingSetupFix2$OFF_IND_1 = combinedMatchingSetupFix2$OFF_IND_1[wMatchOk]
-  combinedMatchingSetupFix2$OFF_IND_2 = combinedMatchingSetupFix2$OFF_IND_2[wMatchOk]
+  wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                       combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                       combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                       combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
   
-  tot_lengths = data.frame("arr1" = sapply(combinedMatchingSetupFix2$ARR_IND_1, length),
-                           "arr2" = sapply(combinedMatchingSetupFix2$ARR_IND_2, length),
-                           "off1" = sapply(combinedMatchingSetupFix2$OFF_IND_1, length),
-                           "off2" = sapply(combinedMatchingSetupFix2$OFF_IND_2, length))
-  tot_lengths[which(tot_lengths$off1 == 0 | tot_lengths$off2 == 0), ] = NA
+  combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
   
-  v1 = sd(tot_lengths$off1 + tot_lengths$off2, na.rm=TRUE)^2
-  rat_off = tot_lengths$off1 / tot_lengths$off2
-  rat_off[which(rat_off < 1)] = 1 / rat_off[which(rat_off < 1)]
+  v1 = sd(combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2, na.rm=TRUE)^2
+  non_zeros = which(combinedMatchingSetupFix2$n_off_1 != 0 & combinedMatchingSetupFix2$n_off_2 != 0)
+  rat_off = rep(0, nrow(combinedMatchingSetupFix2))
+  rat_off[non_zeros] = combinedMatchingSetupFix2$n_off_1[non_zeros] / combinedMatchingSetupFix2$n_off_2[non_zeros]
+  rat_off[rat_off < 1 & rat_off != 0] = 1 / rat_off[rat_off < 1 & rat_off != 0]
   v2 = sd(rat_off, na.rm=TRUE)^2
-
-  # Need to compensate for 0s
-  off_num = data.frame("off1" = sapply(sim_orig$OFF_IND_1, length),
-                       "off2" = sapply(sim_orig$OFF_IND_2, length))
-  # off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] = 
-  #   off_num[which(off_num$off1 == 0 | off_num$off2 == 0), ] + 1
+  
+  t_stat = abs(combinedMatchingSetupFix2$n_arr_1 - combinedMatchingSetupFix2$n_arr_2)
+  t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2)
   
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
@@ -65,50 +52,25 @@ for (k in 2:13) {
 
     for (ii in indexList_MAIN) {
       ## find matches
-      off_temp = off_num$off1[ii] + off_num$off2[ii]
-      ratio_temp = max(off_num$off1[ii] / off_num$off2[ii],
-                       off_num$off2[ii] / off_num$off1[ii])
+      off_temp = sim_orig$DATA$n_off_1_prec[ii] + sim_orig$DATA$n_off_2_prec[ii]
+      if(sim_orig$DATA$n_off_1_prec[ii] == 0 | sim_orig$DATA$n_off_2_prec[ii] == 0) {
+          ratio_temp = 0
+      } else {
+          ratio_temp = max(sim_orig$DATA$n_off_1_prec[ii] / sim_orig$DATA$n_off_2_prec[ii],
+                           sim_orig$DATA$n_off_2_prec[ii] / sim_orig$DATA$n_off_1_prec[ii])  
+      }
+      
+      stat_temp = t_stat_orig[ii]
+      
+      # print(paste0(ii, " -- t_stat: ", stat_temp, ", Ratio: ", ratio_temp))
 
-      dist_temp = sqrt(((off_temp - (tot_lengths$off1 + tot_lengths$off2))^2/v1) +
+      dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2))^2/v1) +
                          ((ratio_temp - rat_off)^2 / v2))
 
-      # w50 = order(dist_temp)[1:j]
+      w50 = order(dist_temp)[1:j]
       
-      # Choose one mother street --------------------
-      match_counter = jj = 1
-      streetInd = vector(mode = "list", length = 77)
-      for (w in 1:77) {streetInd[[w]] = c(-1) }
-      w50 = rep(NA, j)
-      close_ind = order(dist_temp)
-      while(match_counter <= j) {
-        temp = combinedMatchingSetupFix2$DATA[close_ind[jj], ]
-        if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
-          w50[match_counter] = close_ind[jj]
-          match_counter = match_counter + 1
-          streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-        }
-        jj = jj + 1
-      }
-      # --------------------------------------------
-      
-
-      # tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
-      null_dist = combinedMatchingSetupFix2$DATA$t_stat_new[w50]
-
-      # orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
-      stat_temp = sim_orig$DATA$t_stat_new[ii]
-
-      test = density(null_dist, bw = "ucv")
-      xx = test$x
-      yy = test$y
-      dx <- xx[2L] - xx[1L]
-      C <- sum(yy) * dx
-      
-      p.unscaled <- sum(yy[xx >= stat_temp]) * dx
-      p.scaled <- p.unscaled / C
-      
-      pval[ii] = p.scaled
-      # pval[ii] = mean(null_dist >= stat_temp)
+      null_dist = t_stat[w50]
+      pval[ii] = mean(null_dist > stat_temp)
     }
 
     perc_pval = mean(pval < 0.05, na.rm=TRUE)
