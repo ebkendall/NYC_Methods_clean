@@ -1,16 +1,18 @@
 # ALL FIGURES ARE 1000 x 800
 
 library(tidyverse, quietly = T)
+library(gridExtra)
 
 # Figure of Naive P-val  -------------------------------------------------------
 load('../Output/origGridInfo/sim_orig_5.dat')
 unadjPVal500 = data.frame("p" = na.omit(sim_orig$DATA$naive_pval))
-ggplot(unadjPVal500, aes(x=p)) + 
-  geom_histogram(color="black", fill="white", bins = sqrt(nrow(sim_orig$DATA))) +
-  xlab("P-Values") + 
-  ylab("Frequency") + 
-  ggtitle("Histogram of P-Values at Buffer Width 500 ft") + 
-  theme(text = element_text(size=24))
+realData_naive = ggplot(unadjPVal500, aes(x=p)) + 
+                          geom_histogram(color="black", fill="white", bins = sqrt(nrow(sim_orig$DATA))) +
+                          xlab("P-Values") + 
+                          ylab("Frequency") + 
+                          ggtitle("Histogram of p-values at buffer width 500 ft") + 
+                          theme(text = element_text(size=8))
+ggsave(filename = "Plots/realData_naive.png", plot = realData_naive, width = 1000, height = 800, units = "px")
 
 load('../Output/origGridInfo/sim_orig_3.dat')
 unadjPValTotal = data.frame(na.omit(sim_orig$DATA$naive_pval))
@@ -24,52 +26,48 @@ percRejection = data.frame("perc" = rep(1,11), "buff" = c(3:13))
 for (i in 1:11) {
   percRejection[i,1] = sum(na.omit(unadjPValTotal[,i] < 0.05)) / sum(!is.na(unadjPValTotal[,i]))
 }
-# percRejection = percRejection[1:7,]
 
-ggplot(percRejection, aes(y=perc, x=buff)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  ggtitle("Percentage of P-Values less than 0.05") +
-  xlab("Buffer Width (100x in ft)") + 
-  ylab("Percent") +
-  ylim(0, 1) +
-  scale_x_continuous(breaks = pretty(percRejection$buff, n = 11)) +
-  theme(text = element_text(size=24))
+realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) + 
+                          geom_bar(position="dodge", stat="identity") + 
+                          ggtitle("Percentage of p-values less than 0.05") +
+                          xlab("Buffer Width (100x in ft)") + 
+                          ylab("Percent") +
+                          ylim(0, 1) +
+                          scale_x_continuous(breaks = pretty(percRejection$buff, n = 11)) +
+                          theme(text = element_text(size=8))
+ggsave(filename = "Plots/realData_naive_total.png", plot = realData_naive_total, width = 1000, height = 800, units = "px")
 
 # Figure of Global results -----------------------------------------------------
-library(gridExtra)
-library(tidyverse)
 load("../Data/indexList_MAIN.RData")
 
-n_matches = 250
+n_matches = 560
 
 p_val_df = rep(NA, 13)
 
-trialNum = 1
-set.seed(trialNum)
-
-load(paste0('../Output/Global/global_t_stat_', trialNum,"_FINAL.dat"))
+load('../Output/Global/global_t_stat_FINAL.dat')
 
 for(k in 2:13) {
   
-  load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
-  
-  t_stat = max(sim_orig$DATA$t_stat_new, na.rm = T)
+    load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
+    
+    t_stat = max(t_stat_orig, na.rm = T)
   # w_max = which.max(na.omit(sim_orig$DATA$t_stat_pval))
   # print(paste0(k, ": ", t_stat))
   
   # whichMaxInfo[[k]] = rbind(whichMaxInfo[[k]], c(w_max, t_stat))
   
-  test = density(global_t_stat[[k]]$max_t_stat, bw = "ucv")
-  xx = test$x
-  yy = test$y
-  dx <- xx[2L] - xx[1L]
-  C <- sum(yy) * dx
+  # test = density(global_t_stat[[k]]$max_t_stat, bw = "ucv")
+  # xx = test$x
+  # yy = test$y
+  # dx <- xx[2L] - xx[1L]
+  # C <- sum(yy) * dx
+  # 
+  # p.unscaled <- sum(yy[xx >= t_stat]) * dx
+  # p.scaled <- p.unscaled / C
+  # p_val_df[k] = p.scaled
   
-  p.unscaled <- sum(yy[xx >= t_stat]) * dx
-  p.scaled <- p.unscaled / C
-  
-  # p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
-  p_val_df[k] = p.scaled
+  p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
   
 }
 print(p_val_df)
@@ -125,10 +123,10 @@ grid.arrange(p1, p2, p3, nrow = 3)
 
 # Figure of Individual results -----------------------------------------------------
 perc_rejections_new = data.frame("orig" = c(1:13), "adjusted" = c(1:13))
-load("../Output/p_vals_match_rel/p_val_df_1_new_stat_FINAL.dat")
+load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
 for (i in 2:13) {
   load(paste0('../Output/origGridInfo/sim_orig_', i, '.dat'))
-  p_orig = mean(sim_orig$DATA$t_stat_pval < 0.05, na.rm = T)
+  p_orig = mean(sim_orig$DATA$naive_pval < 0.05, na.rm = T)
   p_new = mean(p_val_df[[i]][1,] < 0.05, na.rm = T)
   perc_rejections_new[i, ] = c(p_orig, p_new)
 }
@@ -139,26 +137,53 @@ pValtype = c(rep("Naive", 6), rep("Corrected", 6))
 yVal = c(perc_rejections_new[,1], perc_rejections_new[,2])
 myData <- data.frame(buff,pValtype, yVal)
 
-ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) + 
-  geom_bar(position="dodge", stat="identity") + 
-  ggtitle("Percentage of P-Values less than 0.05 (Arrest Data)") +
-  xlab("Buffer Width (100x in ft)") + 
-  ylab("Percent") +
-  scale_x_continuous(breaks = seq(3,13, by=2)) +
-  scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
-  geom_hline(yintercept=0.05, linetype="dashed", 
-             color = "black", size = 1.5) +
-  theme(text = element_text(size=24), legend.position="bottom",
-        legend.title=element_blank()) +
-  scale_fill_discrete(name = "P-Value")
+realData_pval_final = ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) + 
+                          geom_bar(position="dodge", stat="identity") + 
+                          ggtitle("Percent of p-values less than 0.05 (Arrest Data)") +
+                          xlab("Buffer Width (100x in ft)") + 
+                          ylab("Percent") +
+                          scale_x_continuous(breaks = seq(3,13, by=2)) +
+                          scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
+                          geom_hline(yintercept=0.05, linetype="dashed", 
+                                     color = "black", size = 0.5) +
+                          theme(text = element_text(size=8), legend.position="bottom",
+                                  legend.title=element_blank(),
+                                  legend.key.height= unit(1, 'mm'),
+                                  legend.key.width= unit(4, 'mm'),
+                                  legend.box.margin=margin(-10,-10,-10,-10)) +
+                          scale_fill_discrete(name = "P-Value")
+
+ggsave(filename = "Plots/realData_pval_final.png", plot = realData_pval_final, width = 1000, height = 800, units = "px")
+
+# Updated P-Value histograms ---------------------------------------------------
+load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
+p = vector(mode = 'list', length = 12)
+for(i in 2:13) {
+    adjPVal500 = data.frame("p" = na.omit(p_val_df[[i]][1,]))
+    p[[i-1]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        ggtitle(paste0("Corrected p-values at buffer ",i,"00 ft")) + 
+        theme(text = element_text(size=8))
+}
+pdf("Plots/correctedHist.pdf", onefile = T)
+grid.arrange(p[[1]], p[[2]], ncol = 1, nrow = 2)
+grid.arrange(p[[3]], p[[4]], ncol = 1, nrow = 2)
+grid.arrange(p[[5]], p[[6]], ncol = 1, nrow = 2)
+grid.arrange(p[[7]], p[[8]], ncol = 1, nrow = 2)
+grid.arrange(p[[9]], p[[10]], ncol = 1, nrow = 2)
+grid.arrange(p[[11]], p[[12]], ncol = 1, nrow = 2)
+dev.off()
 
 df_new = data.frame("p" = na.omit(p_val_df[[5]][1, ]))
-ggplot(df_new, aes(x=p)) + 
-  geom_histogram(color="black", fill="white", bins = 12) + 
-  ggtitle("Histogram of Corrected P-Values at Buffer 500 ft") +
-  xlab("Corrected P-Value") + 
-  ylab("Frequency") +
-  theme(text = element_text(size=24)) 
+realData_pval_500 = ggplot(df_new, aes(x=p)) + 
+                        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+                        xlab("P-Values") + 
+                        ylab("Frequency") + 
+                        ggtitle(paste0("Corrected p-values at buffer 500 ft")) + 
+                        theme(text = element_text(size=8))
+ggsave(filename = "Plots/realData_pval_500.png", plot = realData_pval_500, width = 1000, height = 800, units = "px")
 
 # Newest plots to show importance of matching ----------------------------------
 library(splines)

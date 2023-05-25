@@ -47,9 +47,6 @@ par(mfrow = c(1,2))
 nyc_small = nycSub[c(which(nycSub$Precinct == ind_choice[1,1]),
                      which(nycSub$Precinct == ind_choice[1,2])), ]
 
-# tempOverlap = gIntersection(totalStreetBuffInfo_NEW[[5]][[ind1]]$buffer, nyc_small,
-#                             byid = T)
-
 plot(totalStreetBuffInfo_NEW[[5]][[ind1]]$poly2, lwd = 3)
 plot(totalStreetBuffInfo_NEW[[5]][[ind1]]$poly1, add = T, lwd = 3)
 plot(nyc_small, lty = 2, add = T)
@@ -64,10 +61,6 @@ points(arr_choice$x_coord_cd[arr_choice$arrest_precinct == ind_choice[1,2]],
 nyc_small = nycSub[c(which(nycSub$Precinct == ind_choice[2,1]),
                      which(nycSub$Precinct == ind_choice[2,2])), ]
 
-# tempOverlap = gIntersection(totalStreetBuffInfo_ORIG[[5]][[ind2]]$buffer, nyc_small,
-#                             byid = T)
-
-# plot(tempOverlap, lwd = 3)
 plot(totalStreetBuffInfo_NEW[[5]][[ind2]]$poly1, lwd = 3)
 plot(totalStreetBuffInfo_NEW[[5]][[ind2]]$poly2, add = T, lwd = 3)
 plot(nyc_small, lty = 2, add = T)
@@ -78,43 +71,34 @@ points(arr_choice$x_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]],
        arr_choice$y_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]],
        col = 'blue', cex = 2.5)
 
-# Seeing if the border comes into play
-# small_p = point.in.polygon(arr_choice$x_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]],
-#                            arr_choice$y_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]],
-#                            tempOverlap@polygons[[2]]@Polygons[[1]]@coords[,1],
-#                            tempOverlap@polygons[[2]]@Polygons[[1]]@coords[,2])
-# points(arr_choice$x_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]][small_p > 0],
-#        arr_choice$y_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]][small_p > 0],
-#        col = "green")
 dev.off()
 
-# Figure 5 (streets) -----------------------------------------------------------
+# Figure 6 (streets) -----------------------------------------------------------
 load('../Data/streetsByPrec.RData')
-load('../Data/OutputStrInfo_noWater/strInfo_5_53.dat')
+load('../Data/OutputStrInfo_realData/strInfo_5_53.dat')
 
 png(filename = "Plots/precStreetsAndBuff.png", width = 2000, height = 1000,
     units = "px", pointsize = 12, bg = "white", res = NA)
 
-plot(nycSub[53, ], lwd = 2.5)
-temp = nycSub[53, ]
-plot(streetsByPrec[[53]], add = T, col = "grey", lwd = 1.5)
-
-borderBuff = gBuffer(temp, width = -500)
-newSubStreets = gIntersection(streetsByPrec[[53]], borderBuff)
-plot(newSubStreets, add = T, col = 'red', lwd = 2)
-
 areas = NULL
 for(i in 1:length(streetLengthInfo_null)) {
   if (!is.na(streetLengthInfo_null[[i]][[1]])) {
-    # plot(streetLengthInfo_null[[i]][[1]]$buffer, add = T, border = "red")
     areas = c(areas, streetLengthInfo_null[[i]][[1]]$buffer@polygons[[1]]@area)
   } else {
     areas = c(areas, NA)
   }
 }
 areas_ind = order(areas, decreasing = T)
-plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
-plot(streetLengthInfo_null[[areas_ind[15]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
-plot(streetLengthInfo_null[[areas_ind[65]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
+plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer, border = "blue", lwd = 2)
+plot(nycSub[53, ], lwd = 2.5, add = T)
+temp = nycSub[53, ]
+plot(streetsByPrec[[53]], add = T, col = "grey", lwd = 1.5)
+
+borderBuff = gBuffer(temp, width = -500)
+newSubStreets = gIntersection(streetsByPrec[[53]], borderBuff)
+plot(newSubStreets, add = T, col = 'red', lwd = 2)
+plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer,  add = T, border = "blue", lwd = 2)
+plot(streetLengthInfo_null[[areas_ind[12]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
+# plot(streetLengthInfo_null[[areas_ind[60]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
 
 dev.off()
