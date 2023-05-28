@@ -6,7 +6,6 @@ n_matches = 560
 
 p_val_df = rep(NA, 13)
 
-# whichMaxInfo = vector(mode = 'list', length = 13)
 set.seed(2023)
 
 load('../Output_tree/combination/global_t_stat_FINAL.dat')
@@ -14,7 +13,8 @@ load('../Output_tree/combination/global_t_stat_FINAL.dat')
 for(k in 2:13) {
   
   load(paste0('../Output_tree/origGridInfo/sim_orig_', k,".dat"))
-  t_stat_streets_orig = abs(sim_orig$DATA$count1 - sim_orig$DATA$count2)
+  t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
+                            - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
   
   t_stat = max(t_stat_streets_orig, na.rm = T)
   # w_max = which.max(na.omit(sim_orig$DATA$t_stat_pval))

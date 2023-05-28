@@ -31,8 +31,10 @@ for (k in 2:13) {
     v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
     
-    t_stat_streets = abs(combinedMatchingSetupFix2$count1 - combinedMatchingSetupFix2$count2)
-    t_stat_streets_orig = abs(sim_orig$DATA$count1 - sim_orig$DATA$count2)
+    t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
+                         - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
+    t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
+                              - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
 
     row_num = 1
     perc_pval_match = data.frame("num_match" = match_count,

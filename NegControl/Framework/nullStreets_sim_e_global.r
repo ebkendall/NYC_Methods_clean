@@ -18,7 +18,6 @@ set.seed(2023)
 # Run this for the different surface types
 global_null = vector(mode = "list", length = 13)
 
-
 for (k in 2:13) {
     global_null[[k]] = matrix(nrow = max(indexList_MAIN), ncol = n_matches)
      
@@ -50,7 +49,8 @@ for (k in 2:13) {
     v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
-    t_stat_streets = abs(combinedMatchingSetupFix2$count1 - combinedMatchingSetupFix2$count2)
+    t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
+                         - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
     for(ii in indexList_MAIN) {
         ## find matches
         streets_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
