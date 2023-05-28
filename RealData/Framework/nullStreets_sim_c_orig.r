@@ -6,9 +6,7 @@ load("../Data/indexList_MAIN.RData")
 load("../Data/totalStreetBuffInfo_NEW.RData")
 load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
-load('../Data/monthKey.rda')
 Dir = '../Output/origGridInfo/'
-print(Dir)
 
 for (k in 2:13) {
   print(k)
@@ -129,21 +127,3 @@ for (k in 2:13) {
 
   save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))
 }
-
-# pdf("obsBorders.pdf")
-# par(mfrow=c(2,2))
-# for(k in 2:13) {
-#     for(i in indexList_MAIN) {
-#         poly_ind1 = totalStreetBuffInfo_NEW[[k]][[i]]$poly_ind1
-#         poly_ind2 = totalStreetBuffInfo_NEW[[k]][[i]]$poly_ind2
-#         if(length(totalStreetBuffInfo_NEW[[k]][[i]]$poly1@polygons[[1]]@Polygons) > 1) print(paste0(k, ", poly 1: ", i))
-#         if(length(totalStreetBuffInfo_NEW[[k]][[i]]$poly2@polygons[[1]]@Polygons) > 1) print(paste0(k, ", poly 2: ", i))
-#         
-#         if(poly_ind1 > 1) print(paste0(k, ", poly_ind1: ", i))
-#         if(poly_ind2 > 1) print(paste0(k, ", poly_ind2: ", i))
-#         
-#         plot(totalStreetBuffInfo_NEW[[k]][[i]]$poly1, border = 'blue', main = i)
-#         plot(totalStreetBuffInfo_NEW[[k]][[i]]$poly2, border = 'red', add = T)
-#     }
-# }
-# dev.off()

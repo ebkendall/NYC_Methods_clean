@@ -5,6 +5,7 @@ load("../Data/indexList_MAIN.RData")
 
 perc_pval_match = vector(mode = "list", length = 13)
 p_val_df <- vector(mode = "list", length = 13)
+debug_spatial_ind = vector(mode = 'list', length = 13)
 
 for (k in 2:13) {
 
@@ -38,13 +39,18 @@ for (k in 2:13) {
   rat_off[rat_off < 1 & rat_off != 0] = 1 / rat_off[rat_off < 1 & rat_off != 0]
   v2 = sd(rat_off, na.rm=TRUE)^2
   
-  t_stat = abs(combinedMatchingSetupFix2$n_arr_1 - combinedMatchingSetupFix2$n_arr_2)
-  t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2)
+  t_stat = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$streets1
+               - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$streets2)
+  t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$streets1
+                    - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$streets2)
+  # t_stat = abs(combinedMatchingSetupFix2$n_arr_1 - combinedMatchingSetupFix2$n_arr_2)
+  # t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
   
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
                                     "perc_pval_less_05" = rep(NA, length(match_count)))
   p_val_df[[k]] = matrix(nrow = length(match_count), ncol = nrow(sim_orig$DATA))
+  debug_spatial_ind[[k]] = matrix(nrow = match_count, ncol = 164)
 
   for(j in match_count) {
     print(paste0("Match Num: ", j))
@@ -61,16 +67,19 @@ for (k in 2:13) {
       }
       
       stat_temp = t_stat_orig[ii]
-      
-      # print(paste0(ii, " -- t_stat: ", stat_temp, ", Ratio: ", ratio_temp))
 
       dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2))^2/v1) +
                          ((ratio_temp - rat_off)^2 / v2))
 
       w50 = order(dist_temp)[1:j]
+
+      # Store the precinct and indigo to see how spatial variable we go
+      debug_spatial_ind[[k]][,ii] = t_stat[w50]
       
       null_dist = t_stat[w50]
       pval[ii] = mean(null_dist > stat_temp)
+      
+      if(sum(is.nan(null_dist)) > 0) print(paste0(j, ", ", ii))
     }
 
     perc_pval = mean(pval < 0.05, na.rm=TRUE)
@@ -80,58 +89,20 @@ for (k in 2:13) {
   }
 }
 
-save(p_val_df, file = paste0("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat"))
-save(perc_pval_match, file = paste0("../Output/p_vals_match_rel/perc_pval_match_new_stat_FINAL.dat"))
+save(p_val_df, file = "../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
+save(perc_pval_match, file = "../Output/p_vals_match_rel/perc_pval_match_new_stat_FINAL.dat")
+save(debug_spatial_ind, file = "../Output/p_vals_match_rel/debug_spatial_ind.dat")
 
-# ---------------------------------------------------------------
-# ------- Plotting everything
-# ---------------------------------------------------------------
-
-# load("../Output/sim_orig/p_vals_match_rel/perc_pval_match_1.dat")
-# final_plot = perc_pval_match
-# plot_mat = perc_pval_match
-
-# for (i in 2:100) {
-#     load(paste0("../Output/sim_orig/p_vals_match_rel/perc_pval_match_", i, ".dat"))
-#     for(j in 1:3) {
-#         for(k in 2:13) {
-#             final_plot[[j]][[k]] = rbind(final_plot[[j]][[k]], perc_pval_match[[j]][[k]])
-#             plot_mat[[j]][[k]] = cbind(plot_mat[[j]][[k]], perc_pval_match[[j]][[k]]$perc_pval_less_05)
-#         }
-#     }
+# dist_matrix = matrix(nrow = 13, ncol = 164)
+# for(i in 2:length(debug_spatial_ind)) {
+#     print(i)
+#     temp = colMeans(debug_spatial_ind[[i]])
+#     dist_matrix[i, ]  = temp
 # }
-
-# folder_type = c("HotSpot", "Uniform", "Random")
-
-# pdf('../Output/Plots/pVal_num_match.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     print(paste0(k, " ", i))
-#     pval = final_plot[[k]][[i]]
-#     temp = cbind(plot_mat[[k]][[i]][,1], rowMeans(plot_mat[[k]][[i]][,-1]))
-#     # print(t(temp))
-#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     abline(h=0.05, col = "red")
-#     lines(temp[,1], temp[,2], col = "purple", lwd = 2)
-#   }
+# 
+# dist_matrix_old = matrix(nrow = 13, ncol = 164)
+# for(i in 2:length(debug_spatial_ind_old)) {
+#     print(i)
+#     temp = colMeans(debug_spatial_ind_old[[i]])
+#     dist_matrix_old[i, ]  = temp
 # }
-# dev.off()
-
-# pdf('../Output/Plots/pVal_num_match2.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     pval = plot_mat[[k]][[i]]
-#     plot(pval[,1], pval[,2], main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     for(w in 1:100) {
-#         abline(lm(pval[,w+1] ~ pval[,1]), col = w)
-#         # lines(pval[,1], pval[,w+1], col = w)
-#     }
-#   }
-# }
-# dev.off()
