@@ -1,9 +1,7 @@
 # Step Outline -----------------------------------------------------------------
 # Step 1: save all the matches in the global_null list for each surface
 # Step 2: iterate through and grab the max
-# (next steps are in ...h_globalPlots.r)
 # Step 3: get a p-value for each surface and each iterate for each buffer width
-# Step 4: look at the distribution of p-values across all 100 iterates
 # ------------------------------------------------------------------------------
 
 load("../Data/indexList_MAIN.RData")
@@ -96,3 +94,18 @@ for(k in 2:13) {
 
 save(global_t_stat, file = "../Output_tree/combination/global_t_stat_FINAL.dat")
 
+# Step 3 -----------------------------------------------------------------------
+
+p_val_df = rep(NA, 13)
+
+for(k in 2:13) {
+  
+  load(paste0('../Output_tree/origGridInfo/sim_orig_', k,".dat"))
+  t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
+                            - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+  
+  t_stat = max(t_stat_streets_orig, na.rm = T)
+
+  p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
+}
+print(p_val_df)
