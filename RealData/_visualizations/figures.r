@@ -37,6 +37,70 @@ realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) +
                           theme(text = element_text(size=8))
 ggsave(filename = "Plots/realData_naive_total.png", plot = realData_naive_total, width = 1000, height = 800, units = "px")
 
+# Figure of Individual results -----------------------------------------------------
+perc_rejections_new = data.frame("orig" = c(1:13), "adjusted" = c(1:13))
+load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
+for (i in 2:13) {
+    load(paste0('../Output/origGridInfo/sim_orig_', i, '.dat'))
+    p_orig = mean(sim_orig$DATA$naive_pval < 0.05, na.rm = T)
+    p_new = mean(p_val_df[[i]][1,] < 0.05, na.rm = T)
+    perc_rejections_new[i, ] = c(p_orig, p_new)
+}
+perc_rejections_new = perc_rejections_new[seq(3,13,by=2),]
+
+buff = rep(seq(3,13,by=2), 2)
+pValtype = c(rep("Naive", 6), rep("Corrected", 6))
+yVal = c(perc_rejections_new[,1], perc_rejections_new[,2])
+myData <- data.frame(buff,pValtype, yVal)
+
+realData_pval_final = ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) + 
+    geom_bar(position="dodge", stat="identity") + 
+    ggtitle("Percent of p-values less than 0.05 (Arrest Data)") +
+    xlab("Buffer Width (100x in ft)") + 
+    ylab("Percent") +
+    scale_x_continuous(breaks = seq(3,13, by=2)) +
+    scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
+    geom_hline(yintercept=0.05, linetype="dashed", 
+               color = "black", size = 0.5) +
+    theme(text = element_text(size=8), legend.position="bottom",
+          legend.title=element_blank(),
+          legend.key.height= unit(1, 'mm'),
+          legend.key.width= unit(4, 'mm'),
+          legend.box.margin=margin(-10,-10,-10,-10)) +
+    scale_fill_discrete(name = "P-Value")
+
+ggsave(filename = "Plots/realData_pval_final.png", plot = realData_pval_final, width = 1000, height = 800, units = "px")
+
+# Updated P-Value histograms ---------------------------------------------------
+load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
+p = vector(mode = 'list', length = 12)
+for(i in 2:13) {
+    adjPVal500 = data.frame("p" = na.omit(p_val_df[[i]][1,]))
+    p[[i-1]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        ggtitle(paste0("Corrected p-values at buffer ",i,"00 ft")) + 
+        theme(text = element_text(size=8))
+}
+pdf("Plots/correctedHist2.pdf", onefile = T)
+grid.arrange(p[[1]], p[[2]], ncol = 1, nrow = 2)
+grid.arrange(p[[3]], p[[4]], ncol = 1, nrow = 2)
+grid.arrange(p[[5]], p[[6]], ncol = 1, nrow = 2)
+grid.arrange(p[[7]], p[[8]], ncol = 1, nrow = 2)
+grid.arrange(p[[9]], p[[10]], ncol = 1, nrow = 2)
+grid.arrange(p[[11]], p[[12]], ncol = 1, nrow = 2)
+dev.off()
+
+df_new = data.frame("p" = na.omit(p_val_df[[5]][1, ]))
+realData_pval_500 = ggplot(df_new, aes(x=p)) + 
+    geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+    xlab("P-Values") + 
+    ylab("Frequency") + 
+    ggtitle(paste0("Corrected p-values at buffer 500 ft")) + 
+    theme(text = element_text(size=8))
+ggsave(filename = "Plots/realData_pval_500.png", plot = realData_pval_500, width = 1000, height = 800, units = "px")
+
 # Figure of Global results -----------------------------------------------------
 load("../Data/indexList_MAIN.RData")
 
@@ -49,7 +113,14 @@ load('../Output/Global/global_t_stat_FINAL.dat')
 for(k in 2:13) {
   
     load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
-    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$n_off_1_prec
+                      - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$n_off_2_prec)
     
     t_stat = max(t_stat_orig, na.rm = T)
   
@@ -71,111 +142,38 @@ realData_global_total = ggplot(globalPvals_new_2, aes(y=p, x=buff)) +
 
 ggsave(filename = "Plots/realData_global_total.png", plot = realData_global_total, width = 1000, height = 800, units = "px")
 
-globalEmpDist = data.frame("five" = global_t_stat[[5]]$max_t_stat,
-                           "nine" = global_t_stat[[9]]$max_t_stat,
-                           "thirteen" = global_t_stat[[13]]$max_t_stat)
-globalObsVal = data.frame("five" = 1, "nine" = 1, "thirteen" = 1)
 ind = 1
+g_plots = vector(mode = "list", length = 3)
 for(k in c(5,9,13)) {
     load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
-    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec - sim_orig$DATA$n_arr_2_prec)
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$n_off_1_prec
+                      - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$n_off_2_prec)
     
     t_stat = max(t_stat_orig, na.rm = T)
+
+    globalEmpDist = data.frame("num" = global_t_stat[[k]]$max_t_stat)
+
+    globalObsVal = data.frame("obs" = t_stat)
+
+    g_plots[[ind]] = ggplot(globalEmpDist, aes(x=num)) + 
+                geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
+                geom_vline(data=globalObsVal, aes(xintercept=obs, color="red"), size=1) + 
+                ggtitle(paste0("Distribution of global test statistic (", k, "00 ft)")) +
+                xlab("Test Statistic") + 
+                ylab("Frequency") +
+                theme(legend.position="none", text = element_text(size=4))
   
-    globalObsVal[1,ind] = t_stat
     ind=ind+1
 }
 
-p1 = ggplot(globalEmpDist, aes(x=five)) + 
-  geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
-  geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$five[1], color="red"), size=1) + 
-  ggtitle("Distribution of global test statistic (500 ft)") +
-  xlab("Test Statistic") + 
-  ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=6))
-
-p2 = ggplot(globalEmpDist, aes(x=nine)) + 
-  geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
-  geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$nine[1], color="red"), size=1) + 
-  ggtitle("Distribution of global test statistic (900 ft)") +
-  xlab("Test Statistic") + 
-  ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=6))
-
-p3 = ggplot(globalEmpDist, aes(x=thirteen)) + 
-  geom_histogram(color="black", fill="white", bins = sqrt(nrow(globalEmpDist))) + 
-  geom_vline(data=globalObsVal, aes(xintercept=globalObsVal$thirteen[1], color="red"), size=1) + 
-  ggtitle("Distribution of global test statistic (1300 ft)") +
-  xlab("Test Statistic") + 
-  ylab("Frequency") +
-  theme(legend.position="none", text = element_text(size=6))
-
-realData_global_sep = grid.arrange(p1, p2, p3, nrow = 3)
+realData_global_sep = grid.arrange(g_plots[[1]], g_plots[[2]], g_plots[[3]], nrow = 3)
 ggsave(filename = "Plots/realData_global_sep.png", plot = realData_global_sep, width = 1000, height = 800, units = "px")
-
-# Figure of Individual results -----------------------------------------------------
-perc_rejections_new = data.frame("orig" = c(1:13), "adjusted" = c(1:13))
-load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
-for (i in 2:13) {
-  load(paste0('../Output/origGridInfo/sim_orig_', i, '.dat'))
-  p_orig = mean(sim_orig$DATA$naive_pval < 0.05, na.rm = T)
-  p_new = mean(p_val_df[[i]][1,] < 0.05, na.rm = T)
-  perc_rejections_new[i, ] = c(p_orig, p_new)
-}
-perc_rejections_new = perc_rejections_new[seq(3,13,by=2),]
-
-buff = rep(seq(3,13,by=2), 2)
-pValtype = c(rep("Naive", 6), rep("Corrected", 6))
-yVal = c(perc_rejections_new[,1], perc_rejections_new[,2])
-myData <- data.frame(buff,pValtype, yVal)
-
-realData_pval_final = ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) + 
-                          geom_bar(position="dodge", stat="identity") + 
-                          ggtitle("Percent of p-values less than 0.05 (Arrest Data)") +
-                          xlab("Buffer Width (100x in ft)") + 
-                          ylab("Percent") +
-                          scale_x_continuous(breaks = seq(3,13, by=2)) +
-                          scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
-                          geom_hline(yintercept=0.05, linetype="dashed", 
-                                     color = "black", size = 0.5) +
-                          theme(text = element_text(size=8), legend.position="bottom",
-                                  legend.title=element_blank(),
-                                  legend.key.height= unit(1, 'mm'),
-                                  legend.key.width= unit(4, 'mm'),
-                                  legend.box.margin=margin(-10,-10,-10,-10)) +
-                          scale_fill_discrete(name = "P-Value")
-
-ggsave(filename = "Plots/realData_pval_final.png", plot = realData_pval_final, width = 1000, height = 800, units = "px")
-
-# Updated P-Value histograms ---------------------------------------------------
-load("../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
-p = vector(mode = 'list', length = 12)
-for(i in 2:13) {
-    adjPVal500 = data.frame("p" = na.omit(p_val_df[[i]][1,]))
-    p[[i-1]] = ggplot(adjPVal500, aes(x=p)) + 
-        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
-        xlab("P-Values") + 
-        ylab("Frequency") + 
-        ggtitle(paste0("Corrected p-values at buffer ",i,"00 ft")) + 
-        theme(text = element_text(size=8))
-}
-pdf("Plots/correctedHist.pdf", onefile = T)
-grid.arrange(p[[1]], p[[2]], ncol = 1, nrow = 2)
-grid.arrange(p[[3]], p[[4]], ncol = 1, nrow = 2)
-grid.arrange(p[[5]], p[[6]], ncol = 1, nrow = 2)
-grid.arrange(p[[7]], p[[8]], ncol = 1, nrow = 2)
-grid.arrange(p[[9]], p[[10]], ncol = 1, nrow = 2)
-grid.arrange(p[[11]], p[[12]], ncol = 1, nrow = 2)
-dev.off()
-
-df_new = data.frame("p" = na.omit(p_val_df[[5]][1, ]))
-realData_pval_500 = ggplot(df_new, aes(x=p)) + 
-                        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
-                        xlab("P-Values") + 
-                        ylab("Frequency") + 
-                        ggtitle(paste0("Corrected p-values at buffer 500 ft")) + 
-                        theme(text = element_text(size=8))
-ggsave(filename = "Plots/realData_pval_500.png", plot = realData_pval_500, width = 1000, height = 800, units = "px")
 
 # Newest plots to show importance of matching ----------------------------------
 library(splines)
@@ -184,93 +182,118 @@ k = 5
 load(paste0('../Output/nullGridInfo/combinedMatchingSetup', k, ".dat"))
 load(paste0('../Output/origGridInfo/sim_orig_', k, '.dat'))
 
-wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+## Now remove data points where these ratios are much different
+area_ratio = c(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+wMax_a = max(area_ratio)
+wMin_a = min(area_ratio)
 
-wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+street_ratio = c(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+wMax_s = max(street_ratio)
+wMin_s = min(street_ratio)
 
-wMatchOk1 = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                    (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                    (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                     combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                     combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                     combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
 
-wMatchOk2 = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
-wMatchOk = intersect(wMatchOk1, wMatchOk2)
-# wMatchOk = which(!is.na(combinedMatchingSetupFix$DATA$t_stat_new))
+combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
 
-combinedMatchingSetupFix2 = combinedMatchingSetupFix
-combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
-combinedMatchingSetupFix2$ARR_IND_1 = combinedMatchingSetupFix2$ARR_IND_1[wMatchOk]
-combinedMatchingSetupFix2$ARR_IND_2 = combinedMatchingSetupFix2$ARR_IND_2[wMatchOk]
-combinedMatchingSetupFix2$OFF_IND_1 = combinedMatchingSetupFix2$OFF_IND_1[wMatchOk]
-combinedMatchingSetupFix2$OFF_IND_2 = combinedMatchingSetupFix2$OFF_IND_2[wMatchOk]
+# Wherever there is a 0 for the offense count, everything gets scaled by 1
+which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
+combinedMatchingSetupFix2$n_arr_1[which_zeros] = combinedMatchingSetupFix2$n_arr_1[which_zeros] + 1 
+combinedMatchingSetupFix2$n_arr_2[which_zeros] = combinedMatchingSetupFix2$n_arr_2[which_zeros] + 1 
+combinedMatchingSetupFix2$n_off_1[which_zeros] = combinedMatchingSetupFix2$n_off_1[which_zeros] + 1 
+combinedMatchingSetupFix2$n_off_2[which_zeros] = combinedMatchingSetupFix2$n_off_2[which_zeros] + 1
 
-tot_lengths = data.frame("arr1" = sapply(combinedMatchingSetupFix2$ARR_IND_1, length),
-                         "arr2" = sapply(combinedMatchingSetupFix2$ARR_IND_2, length),
-                         "off1" = sapply(combinedMatchingSetupFix2$OFF_IND_1, length),
-                         "off2" = sapply(combinedMatchingSetupFix2$OFF_IND_2, length))
-tot_lengths[which(tot_lengths$off1 == 0 | tot_lengths$off2 == 0), ] = NA
+which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
 
-rat_off = tot_lengths$off1 / tot_lengths$off2
-rat_off[which(rat_off < 1)] = 1 / rat_off[which(rat_off < 1)]
+rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
+rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
+tot_off = combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2
+t_stat_new = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n_off_1
+             - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$n_off_2)
 
-tot_off = tot_lengths$off1 + tot_lengths$off2
-t_stat_new = combinedMatchingSetupFix2$DATA$t_stat_new
-
-set.seed(2022)
-n=10000
-
-plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioStreet" = rat_off)
+plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioOff" = rat_off)
 plotting_info = plotting_info[!is.na(plotting_info$totLength), ]
-sub_plot = plotting_info[sample(1:nrow(plotting_info), n), ]
+# n=10000
+# sub_plot = plotting_info[sample(1:nrow(plotting_info), n), ]
 
-# ratio of streets
-nonLinMod = lm(t_stat_new ~ ns(ratioStreet, 4), data = sub_plot[,c("t_stat_new", "ratioStreet")])
-nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
+ratio_breaks = seq(0, 60, 6)
+sum_breaks   = seq(1200, 0, -60)
+t_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+for(i in 2:length(ratio_breaks)) {
+    sub_rat = plotting_info[plotting_info$ratioOff <= ratio_breaks[i] &
+                                plotting_info$ratioOff > ratio_breaks[i-1], , drop = F]
+    for(j in 2:length(sum_breaks)) {
+        sub_tot = sub_rat[sub_rat$totLength > sum_breaks[j] & sub_rat$totLength <= sum_breaks[j-1], ,drop=F]
+        if(nrow(sub_tot) > 0) {
+            t_stat_plot[i-1, j-1] = mean(sub_tot$t_stat_new, na.rm = T)
+        }
+    }
+}
+c_name = NULL
+r_name = NULL
+for(i in 2:length(ratio_breaks)) r_name = c(r_name, paste0(ratio_breaks[i-1], "-", ratio_breaks[i]))
+for(i in 2:length(sum_breaks)) c_name = c(c_name, paste0(sum_breaks[i], "-", sum_breaks[i-1]))
 
-gridPoints = seq(1, max(sub_plot$ratioStreet), length=n)
-predictGrid = predict(nonLinMod, newdata=data.frame(ratioStreet=gridPoints))
-df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
-                ratStreet = sub_plot$ratioStreet, t_stat_new = sub_plot$t_stat_new)
-
-ggplot(data = df, aes(x = ratStreet, y = t_stat_new)) + 
-  geom_point() +
-  xlim(0,100) + 
-  geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
-  xlab("Ratio of Crime") + 
-  ylab("Test Statistic") + 
-  ggtitle("Ratio of Crime's Effect on the Test Statistic") + 
-  theme(text = element_text(size=24))
-
-# plot(sub_plot$ratioStreet, sub_plot$t_stat_new, xlim = c(0,100), ylim = c(0,50))
-# lines(gridPoints, predictGrid, col=2)
-testResults = anova(nullMod, nonLinMod)
-testResults
-
-# total length
-
-nonLinMod = lm(t_stat_new ~ ns(totLength, 4), data = sub_plot[,c("t_stat_new", "totLength")])
-nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
-
-gridPoints = seq(1, max(sub_plot$totLength), length=n)
-predictGrid = predict(nonLinMod, newdata=data.frame(totLength=gridPoints))
-
-df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
-                totLength = sub_plot$totLength, t_stat_new = sub_plot$t_stat_new)
-
-ggplot(data = df, aes(x = totLength, y = t_stat_new)) + 
-  geom_point() +
-  geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
-  xlab("Total Crime Count") + 
-  ylab("Test Statistic") + 
-  ggtitle("Total Crime Count's Effect on the Test Statistic") + 
-  theme(text = element_text(size=24))
-
-# plot(sub_plot$totLength, sub_plot$t_stat_new, ylim = c(0,50))
-# lines(gridPoints, predictGrid, col=2)
-testResults = anova(nullMod, nonLinMod)
-testResults
+colnames(t_stat_plot) = c_name
+rownames(t_stat_plot) = r_name
+png(filename = "Plots/appendix_res.png", width = 1000, height = 800,
+    units = "px", pointsize = 12, bg = "white", res = NA)
+heatmap(t_stat_plot, Colv = NA, Rowv = NA)
+dev.off()
+# # ratio of streets
+# nonLinMod = lm(t_stat_new ~ ns(ratioStreet, 4), data = sub_plot[,c("t_stat_new", "ratioStreet")])
+# nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
+# 
+# gridPoints = seq(1, max(sub_plot$ratioStreet), length=n)
+# predictGrid = predict(nonLinMod, newdata=data.frame(ratioStreet=gridPoints))
+# df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
+#                 ratStreet = sub_plot$ratioStreet, t_stat_new = sub_plot$t_stat_new)
+# 
+# ggplot(data = df, aes(x = ratStreet, y = t_stat_new)) + 
+#   geom_point() +
+#   xlim(0,100) + 
+#   geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
+#   xlab("Ratio of Crime") + 
+#   ylab("Test Statistic") + 
+#   ggtitle("Ratio of Crime's Effect on the Test Statistic") + 
+#   theme(text = element_text(size=24))
+# 
+# # plot(sub_plot$ratioStreet, sub_plot$t_stat_new, xlim = c(0,100), ylim = c(0,50))
+# # lines(gridPoints, predictGrid, col=2)
+# testResults = anova(nullMod, nonLinMod)
+# testResults
+# 
+# # total length
+# 
+# nonLinMod = lm(t_stat_new ~ ns(totLength, 4), data = sub_plot[,c("t_stat_new", "totLength")])
+# nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
+# 
+# gridPoints = seq(1, max(sub_plot$totLength), length=n)
+# predictGrid = predict(nonLinMod, newdata=data.frame(totLength=gridPoints))
+# 
+# df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
+#                 totLength = sub_plot$totLength, t_stat_new = sub_plot$t_stat_new)
+# 
+# ggplot(data = df, aes(x = totLength, y = t_stat_new)) + 
+#   geom_point() +
+#   geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
+#   xlab("Total Crime Count") + 
+#   ylab("Test Statistic") + 
+#   ggtitle("Total Crime Count's Effect on the Test Statistic") + 
+#   theme(text = element_text(size=24))
+# 
+# # plot(sub_plot$totLength, sub_plot$t_stat_new, ylim = c(0,50))
+# # lines(gridPoints, predictGrid, col=2)
+# testResults = anova(nullMod, nonLinMod)
+# testResults
 
 
 

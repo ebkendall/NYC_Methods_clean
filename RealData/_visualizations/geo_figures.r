@@ -89,8 +89,8 @@ for(i in 1:length(streetLengthInfo_null)) {
   }
 }
 areas_ind = order(areas, decreasing = T)
-plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer, border = "blue", lwd = 2)
-plot(nycSub[53, ], lwd = 2.5, add = T)
+plot(nycSub[53, ], lwd = 2.5)
+plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer, border = "blue", lwd = 2, add = T)
 temp = nycSub[53, ]
 plot(streetsByPrec[[53]], add = T, col = "grey", lwd = 1.5)
 
@@ -99,6 +99,6 @@ newSubStreets = gIntersection(streetsByPrec[[53]], borderBuff)
 plot(newSubStreets, add = T, col = 'red', lwd = 2)
 plot(streetLengthInfo_null[[areas_ind[1]]][[1]]$buffer,  add = T, border = "blue", lwd = 2)
 plot(streetLengthInfo_null[[areas_ind[12]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
-# plot(streetLengthInfo_null[[areas_ind[60]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
+plot(streetLengthInfo_null[[areas_ind[60]]][[1]]$buffer, add = T, border = "blue", lwd = 2)
 
 dev.off()
