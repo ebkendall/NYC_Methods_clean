@@ -16,14 +16,14 @@ ggsave(filename = "Plots/realData_naive.png", plot = realData_naive, width = 100
 
 load('../Output/origGridInfo/sim_orig_3.dat')
 unadjPValTotal = data.frame(na.omit(sim_orig$DATA$naive_pval))
-for (i in 4:13) {
+for (i in 4:10) {
   load(paste0('../Output/origGridInfo/sim_orig_', i, '.dat'))
   unadjPValTotal = cbind(unadjPValTotal, data.frame(na.omit(sim_orig$DATA$naive_pval)))
 }
-colnames(unadjPValTotal) = c("3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+colnames(unadjPValTotal) = c("3", "4", "5", "6", "7", "8", "9", "10")
 
-percRejection = data.frame("perc" = rep(1,11), "buff" = c(3:13))
-for (i in 1:11) {
+percRejection = data.frame("perc" = rep(1,8), "buff" = c(3:10))
+for (i in 1:8) {
   percRejection[i,1] = sum(na.omit(unadjPValTotal[,i] < 0.05)) / sum(!is.na(unadjPValTotal[,i]))
 }
 
@@ -33,7 +33,7 @@ realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) +
                           xlab("Buffer Width (100x in ft)") + 
                           ylab("Percent") +
                           ylim(0, 1) +
-                          scale_x_continuous(breaks = pretty(percRejection$buff, n = 11)) +
+                          scale_x_continuous(breaks = pretty(percRejection$buff, n = 8)) +
                           theme(text = element_text(size=8))
 ggsave(filename = "Plots/realData_naive_total.png", plot = realData_naive_total, width = 1000, height = 800, units = "px")
 
@@ -46,10 +46,10 @@ for (i in 2:13) {
     p_new = mean(p_val_df[[i]][1,] < 0.05, na.rm = T)
     perc_rejections_new[i, ] = c(p_orig, p_new)
 }
-perc_rejections_new = perc_rejections_new[seq(3,13,by=2),]
+perc_rejections_new = perc_rejections_new[3:10,]
 
-buff = rep(seq(3,13,by=2), 2)
-pValtype = c(rep("Naive", 6), rep("Corrected", 6))
+buff = rep(3:10, 2)
+pValtype = c(rep("Naive", 8), rep("Corrected", 8))
 yVal = c(perc_rejections_new[,1], perc_rejections_new[,2])
 myData <- data.frame(buff,pValtype, yVal)
 
@@ -58,7 +58,7 @@ realData_pval_final = ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) +
     ggtitle("Percent of p-values less than 0.05 (Arrest Data)") +
     xlab("Buffer Width (100x in ft)") + 
     ylab("Percent") +
-    scale_x_continuous(breaks = seq(3,13, by=2)) +
+    scale_x_continuous(breaks = 3:10) +
     scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
     geom_hline(yintercept=0.05, linetype="dashed", 
                color = "black", size = 0.5) +
@@ -128,23 +128,23 @@ for(k in 2:13) {
   
 }
 print(p_val_df)
-globalPvals_new_2 = data.frame("buff" = 3:13,
-                               "p" = p_val_df[3:13])
+globalPvals_new_2 = data.frame("buff" = 3:10,
+                               "p" = p_val_df[3:10])
 realData_global_total = ggplot(globalPvals_new_2, aes(y=p, x=buff)) + 
                       geom_bar(position="dodge", stat="identity") + 
-                      ggtitle("P-Values for global test statistics") +
+                      ggtitle("P-Values for global test") +
                       xlab("Buffer Width (100x in ft)") + 
                       ylab("P-Values") +
                       geom_hline(yintercept=0.05, linetype="dashed", 
                                  color = "red", size = 0.5) +
                       theme(text = element_text(size=8)) +
-                      scale_x_continuous(breaks= 2:13)
+                      scale_x_continuous(breaks= 2:10)
 
 ggsave(filename = "Plots/realData_global_total.png", plot = realData_global_total, width = 1000, height = 800, units = "px")
 
 ind = 1
 g_plots = vector(mode = "list", length = 3)
-for(k in c(5,9,13)) {
+for(k in c(3,6,9)) {
     load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
     which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
     sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
@@ -167,7 +167,10 @@ for(k in c(5,9,13)) {
                 ggtitle(paste0("Distribution of global test statistic (", k, "00 ft)")) +
                 xlab("Test Statistic") + 
                 ylab("Frequency") +
-                theme(legend.position="none", text = element_text(size=4))
+                theme(legend.position="none", text = element_text(size=6)) +
+                theme(plot.margin = unit(c(.2,.2,.2,.2), "mm")) +
+                theme(axis.title.x = element_text(vjust=2)) +
+                theme(plot.title = element_text(vjust=-3)) 
   
     ind=ind+1
 }
@@ -221,12 +224,11 @@ t_stat_new = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n
 
 plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioOff" = rat_off)
 plotting_info = plotting_info[!is.na(plotting_info$totLength), ]
-# n=10000
-# sub_plot = plotting_info[sample(1:nrow(plotting_info), n), ]
 
 ratio_breaks = seq(0, 60, 6)
 sum_breaks   = seq(1200, 0, -60)
 t_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+var_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
 for(i in 2:length(ratio_breaks)) {
     sub_rat = plotting_info[plotting_info$ratioOff <= ratio_breaks[i] &
                                 plotting_info$ratioOff > ratio_breaks[i-1], , drop = F]
@@ -234,6 +236,7 @@ for(i in 2:length(ratio_breaks)) {
         sub_tot = sub_rat[sub_rat$totLength > sum_breaks[j] & sub_rat$totLength <= sum_breaks[j-1], ,drop=F]
         if(nrow(sub_tot) > 0) {
             t_stat_plot[i-1, j-1] = mean(sub_tot$t_stat_new, na.rm = T)
+            var_stat_plot[i-1, j-1] = var(sub_tot$t_stat_new, na.rm = T)
         }
     }
 }
@@ -244,57 +247,17 @@ for(i in 2:length(sum_breaks)) c_name = c(c_name, paste0(sum_breaks[i], "-", sum
 
 colnames(t_stat_plot) = c_name
 rownames(t_stat_plot) = r_name
+
+colnames(var_stat_plot) = c_name
+rownames(var_stat_plot) = r_name
+
 png(filename = "Plots/appendix_res.png", width = 1000, height = 800,
     units = "px", pointsize = 12, bg = "white", res = NA)
-heatmap(t_stat_plot, Colv = NA, Rowv = NA)
+heatmap(t_stat_plot, Colv = NA, Rowv = NA, cexRow = 3, cexCol = 3, margins = c(12,2))
 dev.off()
-# # ratio of streets
-# nonLinMod = lm(t_stat_new ~ ns(ratioStreet, 4), data = sub_plot[,c("t_stat_new", "ratioStreet")])
-# nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
-# 
-# gridPoints = seq(1, max(sub_plot$ratioStreet), length=n)
-# predictGrid = predict(nonLinMod, newdata=data.frame(ratioStreet=gridPoints))
-# df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
-#                 ratStreet = sub_plot$ratioStreet, t_stat_new = sub_plot$t_stat_new)
-# 
-# ggplot(data = df, aes(x = ratStreet, y = t_stat_new)) + 
-#   geom_point() +
-#   xlim(0,100) + 
-#   geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
-#   xlab("Ratio of Crime") + 
-#   ylab("Test Statistic") + 
-#   ggtitle("Ratio of Crime's Effect on the Test Statistic") + 
-#   theme(text = element_text(size=24))
-# 
-# # plot(sub_plot$ratioStreet, sub_plot$t_stat_new, xlim = c(0,100), ylim = c(0,50))
-# # lines(gridPoints, predictGrid, col=2)
-# testResults = anova(nullMod, nonLinMod)
-# testResults
-# 
-# # total length
-# 
-# nonLinMod = lm(t_stat_new ~ ns(totLength, 4), data = sub_plot[,c("t_stat_new", "totLength")])
-# nullMod = lm(t_stat_new ~ 1, data = data.frame(t_stat_new = sub_plot[,"t_stat_new"]))
-# 
-# gridPoints = seq(1, max(sub_plot$totLength), length=n)
-# predictGrid = predict(nonLinMod, newdata=data.frame(totLength=gridPoints))
-# 
-# df = data.frame(gridPoints = gridPoints, predictGrid = predictGrid,
-#                 totLength = sub_plot$totLength, t_stat_new = sub_plot$t_stat_new)
-# 
-# ggplot(data = df, aes(x = totLength, y = t_stat_new)) + 
-#   geom_point() +
-#   geom_line(aes(gridPoints, predictGrid), color = "red", size = 2) +
-#   xlab("Total Crime Count") + 
-#   ylab("Test Statistic") + 
-#   ggtitle("Total Crime Count's Effect on the Test Statistic") + 
-#   theme(text = element_text(size=24))
-# 
-# # plot(sub_plot$totLength, sub_plot$t_stat_new, ylim = c(0,50))
-# # lines(gridPoints, predictGrid, col=2)
-# testResults = anova(nullMod, nonLinMod)
-# testResults
 
-
-
+png(filename = "Plots/appendix_res2.png", width = 1000, height = 800,
+    units = "px", pointsize = 12, bg = "white", res = NA)
+heatmap(var_stat_plot, Colv = NA, Rowv = NA, cexRow = 3, cexCol = 3, margins = c(12,2))
+dev.off()
 

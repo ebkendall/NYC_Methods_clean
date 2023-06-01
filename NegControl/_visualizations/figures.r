@@ -37,15 +37,15 @@ ggsave(filename = "Plots/negControl_pval.png", plot = negControl_pval, width = 1
 load('../Output_tree/origGridInfo/sim_orig_3.dat')
 sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
 unadjPValTotal = data.frame(na.omit(sim_orig$DATA$naive_pval))
-for (i in 4:13) {
+for (i in 4:10) {
   load(paste0('../Output_tree/origGridInfo/sim_orig_', i, '.dat'))
   sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
   unadjPValTotal = cbind(unadjPValTotal, data.frame(na.omit(sim_orig$DATA$naive_pval)))
 }
-colnames(unadjPValTotal) = c("3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13")
+colnames(unadjPValTotal) = c("3", "4", "5", "6", "7", "8", "9", "10")
 
-percRejection = data.frame("perc" = rep(1,11), "buff" = c(3:13))
-for (i in 1:11) {
+percRejection = data.frame("perc" = rep(1,8), "buff" = c(3:10))
+for (i in 1:8) {
   percRejection[i,1] = sum(na.omit(unadjPValTotal[,i] < 0.05)) / sum(!is.na(unadjPValTotal[,i]))
 }
 # percRejection = percRejection[1:7,]
@@ -56,9 +56,10 @@ negControl_pval_total = ggplot(percRejection, aes(y=perc, x=buff)) +
                               xlab("Buffer Width (100x in ft)") + 
                               ylab("Percent") +
                               ylim(0, 1) +
-                              scale_x_continuous(breaks = pretty(percRejection$buff, n = 11)) +
+                              scale_x_continuous(breaks = pretty(percRejection$buff, n = 8)) +
                               theme(text = element_text(size=8))
 ggsave(filename = "Plots/negControl_pval_total.png", plot = negControl_pval_total, width = 1000, height = 800, units = "px")
+print(percRejection)
 
 # Number of matches changing -----------------------------------------------------
 j = 3
@@ -87,10 +88,10 @@ for (i in 2:13) {
   p_new = mean(p_val_df[[i]][1,] < 0.05, na.rm = T)
   perc_rejections_new[i, ] = c(p_orig, p_new)
 }
-perc_rejections_new = perc_rejections_new[c(3,5,7,9,11,13),]
+perc_rejections_new = perc_rejections_new[3:10,]
 
-buff = rep(seq(3,13,by=2), 2)
-pValtype = c(rep("Naive", 6), rep("Corrected", 6))
+buff = rep(3:10, 2)
+pValtype = c(rep("Naive", 8), rep("Corrected", 8))
 yVal = c(perc_rejections_new[,1], perc_rejections_new[,2])
 myData <- data.frame(buff,pValtype, yVal)
 
@@ -99,7 +100,7 @@ trees_FINAL = ggplot(myData, aes(fill=pValtype, y=yVal, x=buff)) +
                       ggtitle("Percent of p-values less than 0.05 (Neg. Control)") +
                       xlab("Buffer width (100x in ft)") + 
                       ylab("Percent") +
-                      scale_x_continuous(breaks=seq(3,13,by=2)) +
+                      scale_x_continuous(breaks=3:10) +
                       scale_y_continuous(breaks = pretty(myData$yVal, n = 10)) +
                       geom_hline(yintercept=0.05, linetype="dashed", 
                                  color = "black", size = 0.5) +

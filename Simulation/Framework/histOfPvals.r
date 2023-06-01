@@ -3,7 +3,7 @@ final_hist = p_val_df
 
 for(j in 1:4) {
   for (k in 2:13) {
-    final_hist[[j]][[k]] = final_hist[[j]][[k]][15,]
+    final_hist[[j]][[k]] = final_hist[[j]][[k]][1,]
   }
 }
 
@@ -11,19 +11,20 @@ for (i in c(2:1000)) {
     load(paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", i, ".dat"))
     for(j in 1:4) {
         for(k in 2:13) {
-            final_hist[[j]][[k]] = c(final_hist[[j]][[k]], p_val_df[[j]][[k]][15,])
+            final_hist[[j]][[k]] = c(final_hist[[j]][[k]], p_val_df[[j]][[k]][1,])
         }
     }
 }
 
 folder_type = c("HotSpot", "Uniform", "Random", "Correlated")
+display_name = c("Precinct", "Constant", "Random", "Spatial")
 
-pdf("../Output_noWater/Plots/indiv_new_adj_1.pdf")
+pdf("../Output_noWater/Plots/indiv_new_adj.pdf")
 par(mfrow=c(2,2))
 for (i in 2:13) {
   for(k in 1:4) {
     pval = final_hist[[k]][[i]]
-    hist(pval, main = paste0(folder_type[k], ": pVal for B", i*100),
+    hist(pval, main = paste0(display_name[k], ": pVal for B", i*100),
          xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
          xlim=c(0,1))
   }

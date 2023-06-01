@@ -5,9 +5,8 @@ library("raster")
 
 test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
 
-    t_stat_df = data.frame("tStat_area" = c(-1),
-                           "naive_pval" = c(-1),
-                           "tStat_strt" = c(-1))
+    t_stat_df = data.frame("t_stat" = c(-1),
+                           "naive_pval" = c(-1))
 
     rowInd = 1
     
@@ -28,42 +27,8 @@ test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
         arr1 <- sum(gridValues1)
         arr2 <- sum(gridValues2)
 
-        count1 = count2 = 0
-        #count on one side of boundary
-        if(arr1 > 0) {count1 = rpois(1, arr1)}
-        else {count1 = rpois(1, 1)} #assume there is at least 1
-        #count on the other side of the boundary
-        if(arr2 > 0) {count2 = rpois(1, arr2)}
-        else {count2 = rpois(1, 1)} #assume there exists at least 1
-
-        t1 = count1
-        t2 = count2
-
-        vals = c(t1,s1,t2,s2)
-        if(sum(vals == 0) > 0) {
-            if(vals[2] == 0 | vals[4] == 0) {
-                vals = vals+1
-            } else {
-                vals[1] = vals[1] + 1
-                vals[3] = vals[3] + 1
-            }
-        } 
-
-        tStat = tStat_a = NA
-
-        # Want division to be large / small (streets)
-        if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
-            tStat = (vals[1]/vals[2]) / (vals[3]/vals[4])
-        } else {
-            tStat = (vals[3]/vals[4]) / (vals[1]/vals[2])
-        }
-
-        # Want division to be large / small (area)
-        if ((vals[1]/area1) > (vals[3]/area2)) {
-            tStat_a = (vals[1]/area1) / (vals[3]/area2)
-        } else {
-            tStat_a = (vals[3]/area2) / (vals[1]/area1)
-        }
+        count1 = rpois(1, arr1)
+        count2 = rpois(1, arr2)
 
         n = count1 + count2
         p = 0.5
@@ -75,7 +40,7 @@ test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
             pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
         }
 
-        t_stat_df[rowInd, ] = c(tStat_a, pval, tStat)
+        t_stat_df[rowInd, ] = c(abs(count1 / area1  - count2 / area2), pval)
         rowInd = rowInd + 1
     }
 
@@ -84,11 +49,8 @@ test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
 
 test_stats_orig <- function(gridPointValues, sim_orig, ii) {
     
-    t_stat_df = data.frame("tStat_area" = c(-1),
-                           "naive_pval" = c(-1),
-                           "tStat_strt" = c(-1))
-
-    rowInd = 1
+    t_stat_df = matrix(nrow = 1, ncol = 2)
+    colnames(t_stat_df) = c("t_stat", "naive_pval")
 
     s1 = sim_orig$DATA$streets1[ii]
     s2 = sim_orig$DATA$streets2[ii]
@@ -102,44 +64,8 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
     arr1 <- sum(gridValues1)
     arr2 <- sum(gridValues2)
 
-    count1 = count2 = 0
-
-    #count on one side of boundary
-    if(arr1 > 0) {count1 = rpois(1, arr1)}
-    else {count1 = rpois(1, 1)} #assume there is at least 1
-
-    #count on the other side of the boundary
-    if(arr2 > 0) {count2 = rpois(1, arr2)}
-    else {count2 = rpois(1, 1)} #assume there exists at least 1
-
-    t1 = count1
-    t2 = count2
-
-    vals = c(t1,s1,t2,s2)
-    if(sum(vals == 0) > 0) {
-        if(vals[2] == 0 | vals[4] == 0) {
-            vals = vals+1
-        } else {
-            vals[1] = vals[1] + 1
-            vals[3] = vals[3] + 1
-        }
-    }
-
-    tStat = tStat_a = pval = NA
-
-    # Want division to be large / small (streets)
-    if ((vals[1]/vals[2]) > (vals[3]/vals[4])) {
-        tStat = (vals[1]/vals[2]) / (vals[3]/vals[4])
-    } else {
-        tStat = (vals[3]/vals[4]) / (vals[1]/vals[2])
-    }
-
-    # Want division to be large / small (area)
-    if ((vals[1]/area1) > (vals[3]/area2)) {
-        tStat_a = (vals[1]/area1) / (vals[3]/area2)
-    } else {
-        tStat_a = (vals[3]/area2) / (vals[1]/area1)
-    }
+    count1 = rpois(1, arr1)
+    count2 = rpois(1, arr2)
 
     n = count1 + count2
     p = 0.5
@@ -150,12 +76,12 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
         pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
     }
 
-    t_stat_df[rowInd, ] = c(tStat_a, pval, tStat)
+    t_stat_df[1, ] = c(abs(count1 / area1 - count2 / area2), pval)
 
     return(t_stat_df)
 }
 
-match_count <- seq(20, 1200, by = 20)
+match_count <- 560
 
 trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID')) # 1-1000
 set.seed(trialNum)
@@ -194,25 +120,30 @@ for (k in 2:13) {
     else if (s_name == 4) {gridPointValues = gridPointValues_cov_c_big}
     else {print("Incorrect input to start")}
 
-    wMax_a = max(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
-    wMin_a = min(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    ## Now remove data points where these ratios are much different
+    area_ratio = c(na.omit(sim_orig$DATA$area1 / sim_orig$DATA$area2))
+    area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+    wMax_a = max(area_ratio)
+    wMin_a = min(area_ratio)
     
-    wMax_s = max(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
-    wMin_s = min(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    street_ratio = c(na.omit(sim_orig$DATA$streets1 / sim_orig$DATA$streets2))
+    street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+    wMax_s = max(street_ratio)
+    wMin_s = min(street_ratio)
     
-    wMatchOk = which((combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) > wMin_a &
-                       (combinedMatchingSetupFix$DATA$area1 / combinedMatchingSetupFix$DATA$area2) < wMax_a &
-                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) > wMin_s &
-                       (combinedMatchingSetupFix$DATA$streets1 / combinedMatchingSetupFix$DATA$streets2) < wMax_s)
+    wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                         combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                         combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                         combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
     
     combinedMatchingSetupFix2 = combinedMatchingSetupFix
-    combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix2$DATA[wMatchOk,]
-    combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix2$GRID_IND_1[wMatchOk]
-    combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix2$GRID_IND_2[wMatchOk]
+    combinedMatchingSetupFix2$DATA = combinedMatchingSetupFix$DATA[wRatioOk,]
+    combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix$GRID_IND_1[wRatioOk]
+    combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix$GRID_IND_2[wRatioOk]
     
     v1 = sd(combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$DATA$ratioArea, na.rm=TRUE)^2
-
+    
     row_num = 1
     perc_pval_match[[s_name]][[k]] = data.frame("num_match" = match_count,
                                                 "perc_pval_less_05" = rep(NA, length(match_count)))
@@ -222,51 +153,24 @@ for (k in 2:13) {
       print(j)
       pval = rep(NA, nrow(sim_orig$DATA))
 
-      for (ii in 1 : nrow(sim_orig$DATA)) {
-        if (ii %in% indexList_MAIN) {
+      for (ii in indexList_MAIN) {
           ## find matches
           area_temp = sim_orig$DATA$area1[ii] + sim_orig$DATA$area2[ii]
           ratio_temp = max(sim_orig$DATA$area1[ii] / sim_orig$DATA$area2[ii],
                            sim_orig$DATA$area2[ii] / sim_orig$DATA$area1[ii])
-
           dist_temp = sqrt(((area_temp - (combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2))^2/v1) +
                              ((ratio_temp - combinedMatchingSetupFix2$DATA$ratioArea)^2 / v2))
 
-        #   w50 = order(dist_temp)[1:j]
-        # Choose one mother street --------------------
-            match_counter = jj = 1
-            streetInd = vector(mode = "list", length = 77)
-            for (w in 1:77) {streetInd[[w]] = c(-1) }
-            w50 = rep(NA, j)
-            close_ind = order(dist_temp)
-            while(match_counter <= j) {
-                temp = combinedMatchingSetupFix2$DATA[close_ind[jj], ]
-                if(!(temp$indigo %in% streetInd[[temp$precinct]])) {
-                    w50[match_counter] = close_ind[jj]
-                    match_counter = match_counter + 1
-                    streetInd[[temp$precinct]] = append(streetInd[[temp$precinct]], temp$indigo)
-                }
-                jj = jj + 1
-            }
-        # --------------------------------------------
+          w50 = order(dist_temp)[1:j]
 
+          # Calculating the test statistics based on the surface
           tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, w50)
-          null_dist = tStats_temp$tStat_area
+          null_dist = tStats_temp$t_stat
 
           orig_temp = test_stats_orig(gridPointValues, sim_orig, ii)
-          stat_temp = orig_temp$tStat_area
+          stat_temp = orig_temp[1,1]
 
-          test = density(null_dist, bw = "ucv")
-          xx = test$x
-          yy = test$y
-          dx <- xx[2L] - xx[1L]
-          C <- sum(yy) * dx
-          
-          p.unscaled <- sum(yy[xx >= stat_temp]) * dx
-          p.scaled <- p.unscaled / C
-          
-          pval[ii] = p.scaled
-        }
+          pval[ii] = mean(null_dist > stat_temp)
       }
 
       perc_pval = mean(pval < 0.05, na.rm=TRUE)
@@ -279,56 +183,3 @@ for (k in 2:13) {
 
 save(p_val_df, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", trialNum, ".dat"))
 save(perc_pval_match, file = paste0("../Output_noWater/sim_results/p_vals_match_rel/perc_pval_match_", trialNum, ".dat"))
-
-# ---------------------------------------------------------------
-# ------- Plotting everything
-# ---------------------------------------------------------------
-
-# load("../Output/sim_orig/p_vals_match_rel/perc_pval_match_1.dat")
-# final_plot = perc_pval_match
-# plot_mat = perc_pval_match
-
-# for (i in 2:100) {
-#     load(paste0("../Output/sim_orig/p_vals_match_rel/perc_pval_match_", i, ".dat"))
-#     for(j in 1:3) {
-#         for(k in 2:13) {
-#             final_plot[[j]][[k]] = rbind(final_plot[[j]][[k]], perc_pval_match[[j]][[k]])
-#             plot_mat[[j]][[k]] = cbind(plot_mat[[j]][[k]], perc_pval_match[[j]][[k]]$perc_pval_less_05)
-#         }
-#     }
-# }
-
-# folder_type = c("HotSpot", "Uniform", "Random")
-
-# pdf('../Output/Plots/pVal_num_match.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     print(paste0(k, " ", i))
-#     pval = final_plot[[k]][[i]]
-#     temp = cbind(plot_mat[[k]][[i]][,1], rowMeans(plot_mat[[k]][[i]][,-1]))
-#     # print(t(temp))
-#     plot(pval$num_match, pval$perc_pval_less_05, main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     abline(h=0.05, col = "red")
-#     lines(temp[,1], temp[,2], col = "purple", lwd = 2)
-#   }
-# }
-# dev.off()
-
-# pdf('../Output/Plots/pVal_num_match2.pdf')
-# par(mfrow=c(3,1))
-# for (i in 2:13) {
-#   for(k in 1:3) {
-#     pval = plot_mat[[k]][[i]]
-#     plot(pval[,1], pval[,2], main = paste0(folder_type[k], ": pVal for B", i*100),
-#          xaxt="none", xlab = "Perc. < 0.05 is ")
-#     axis(1, seq(10,500,20), las=2)
-#     for(w in 1:100) {
-#         abline(lm(pval[,w+1] ~ pval[,1]), col = w)
-#         # lines(pval[,1], pval[,w+1], col = w)
-#     }
-#   }
-# }
-# dev.off()

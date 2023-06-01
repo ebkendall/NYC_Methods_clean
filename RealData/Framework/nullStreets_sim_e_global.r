@@ -1,11 +1,3 @@
-# Step Outline -----------------------------------------------------------------
-# Step 1: save all the matches in the global_null list for each surface
-# Step 2: iterate through and grab the max
-# (next steps are in ...h_globalPlots.r)
-# Step 3: get a p-value for each surface and each iterate for each buffer width
-# Step 4: look at the distribution of p-values across all 100 iterates
-# ------------------------------------------------------------------------------
-
 load("../Data/indexList_MAIN.RData")
 
 n_matches = 560
@@ -44,26 +36,35 @@ for (k in 2:13) {
     
     combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
     
+    # Wherever there is a 0 for the offense count, everything gets scaled by 1
+    which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
+    combinedMatchingSetupFix2$n_arr_1[which_zeros] = combinedMatchingSetupFix2$n_arr_1[which_zeros] + 1 
+    combinedMatchingSetupFix2$n_arr_2[which_zeros] = combinedMatchingSetupFix2$n_arr_2[which_zeros] + 1 
+    combinedMatchingSetupFix2$n_off_1[which_zeros] = combinedMatchingSetupFix2$n_off_1[which_zeros] + 1 
+    combinedMatchingSetupFix2$n_off_2[which_zeros] = combinedMatchingSetupFix2$n_off_2[which_zeros] + 1
+    
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+    
+    
+    v1 = sd(combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2, na.rm=TRUE)^2
+    
+    rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
+    rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
+    v2 = sd(rat_off, na.rm=TRUE)^2
     # =====================================================================
 
-    v1 = sd(combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2, na.rm=TRUE)^2
-    non_zeros = which(combinedMatchingSetupFix2$n_off_1 != 0 & combinedMatchingSetupFix2$n_off_2 != 0)
-    rat_off = rep(0, nrow(combinedMatchingSetupFix2))
-    rat_off[non_zeros] = combinedMatchingSetupFix2$n_off_1[non_zeros] / combinedMatchingSetupFix2$n_off_2[non_zeros]
-    rat_off[rat_off < 1 & rat_off != 0] = 1 / rat_off[rat_off < 1 & rat_off != 0]
-    v2 = sd(rat_off, na.rm=TRUE)^2
-    
-    t_stat = abs(combinedMatchingSetupFix2$n_arr_1 - combinedMatchingSetupFix2$n_arr_2)
+    t_stat = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n_off_1
+                 - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$n_off_2)
 
     for(ii in indexList_MAIN) {
         ## find matches
         off_temp = sim_orig$DATA$n_off_1_prec[ii] + sim_orig$DATA$n_off_2_prec[ii]
-        if(sim_orig$DATA$n_off_1_prec[ii] == 0 | sim_orig$DATA$n_off_2_prec[ii] == 0) {
-            ratio_temp = 0
-        } else {
-            ratio_temp = max(sim_orig$DATA$n_off_1_prec[ii] / sim_orig$DATA$n_off_2_prec[ii],
-                             sim_orig$DATA$n_off_2_prec[ii] / sim_orig$DATA$n_off_1_prec[ii])  
-        }
+        ratio_temp = max(sim_orig$DATA$n_off_1_prec[ii] / sim_orig$DATA$n_off_2_prec[ii],
+                         sim_orig$DATA$n_off_2_prec[ii] / sim_orig$DATA$n_off_1_prec[ii])
         
         dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2))^2/v1) +
                              ((ratio_temp - rat_off)^2 / v2))
@@ -108,3 +109,28 @@ for(k in 2:13) {
 
 save(global_t_stat, file = paste0("../Output/Global/global_t_stat_FINAL.dat"))
 
+# Step 3 -----------------------------------------------------------------------
+
+p_val_df = rep(NA, 13)
+
+load('../Output/Global/global_t_stat_FINAL.dat')
+
+for(k in 2:13) {
+    
+    load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$n_off_1_prec
+                      - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$n_off_2_prec)
+    
+    t_stat = max(t_stat_orig, na.rm = T)
+    
+    p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
+    
+}
+print("Global p-values for each buffer width")
+print(p_val_df[3:13])
